@@ -15,7 +15,6 @@
 #define NB_DAYS 		365
 
 
-typedef enum {NOTHING, MONEY} Item;
 typedef enum {WAITING, GETTING_MONEY, GOING_HOME} State;
 	
 
@@ -31,14 +30,17 @@ typedef struct
 typedef struct
 {
 	int nb_days;
-	char gMap[MAP_WIDTH][MAP_HEIGHT]; // map of the game
+	// Old map
+	char gMap[MAP_WIDTH][MAP_HEIGHT];
+
+	// New map
+	Case* ngMap[MAP_WIDTH][MAP_HEIGHT];
 
 	// The position of the differents elements
 	// Position of the money
 	Position* list_money;
 	int money_visible;
 	int money_units;
-
 	// Position of home
 	Position home;
 

@@ -4,9 +4,9 @@
 
 #include "LIFO.h"
 
-int labelMap (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage *perso, char target)
+int labelMap (Case* gMap[MAP_WIDTH][MAP_HEIGHT], Personage *perso, Item target)
 {
-	// Variables
+	// VARIABLES
 	int i, j;
 	// The LIFO lists
 	LIFO_List *toSee = LIFO_createList();
@@ -17,32 +17,30 @@ int labelMap (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage *perso, char target)
 	int upIsOut = 0;
 	int downIsOut = 0;
 	int rightIsOut = 0;
-	// Cases
+	// Case positions
 	Position actualCase = {0, 0};
 	Position nextCase = {0, 0};
 	Position money_found = {-1, -1};
 	// label
-	char label = 'A';
+	int actualDist = 0;
 	// Boolean
 	int found_money = 0;
 
+	// Erase the map
 	for (i = 0; i < MAP_WIDTH; i++)
 	{
 		for (j = 0; j < MAP_HEIGHT; j++)
 		{
-			if (gMap[i][j] >= 'A' && gMap[i][j] <= 'Z')
-				gMap[i][j] = ' ';
+			gMap[i][j]->distance = -1;
 		}
 	}
-
-	gMap[perso->pos.x][perso->pos.y] = ' ';
 
 	// Add Bernard's case in the caseToSee
 	LIFO_addElement (toSeeNext, perso->pos);
 
 	while (toSeeNext->nb_elms > 0 && ! found_money)
 	{
-		while (toSeeNext->nb_elms)
+		while (toSeeNext->nb_elms > 0)
 		{
 			actualCase = LIFO_pop (toSeeNext);
 			LIFO_addElement (toSee, actualCase);
@@ -52,13 +50,13 @@ int labelMap (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage *perso, char target)
 		{
 			actualCase = LIFO_pop (toSee);
 
-			if (gMap[actualCase.x][actualCase.y] == ' ' || gMap[actualCase.x][actualCase.y] == '*')
+			if (gMap[actualCase.x][actualCase.y]->item == NOTHING && gMap[actualCase.x][actualCase.y]->distance == -1)
 			{
-				gMap[actualCase.x][actualCase.y] = label;
+				gMap[actualCase.x][actualCase.y]->distance = actualDist;
 			}
-			else if (gMap[actualCase.x][actualCase.y] == target)
+			else if (gMap[actualCase.x][actualCase.y]->item == target && gMap[actualCase.x][actualCase.y]->targeted == 0)
 			{
-				gMap[actualCase.x][actualCase.y] = label;
+				gMap[actualCase.x][actualCase.y]->distance = actualDist;
 				found_money = 1;
 				money_found.x = actualCase.x;
 				money_found.y = actualCase.y;
@@ -73,85 +71,41 @@ int labelMap (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage *perso, char target)
 			upIsOut = (actualCase.y-1 >= 0) ? 0 : 1;
 
 			// Put the neighbor cases in the list caseToSee
-			/*
-			if ( ! leftIsOut && ! upIsOut )
-			{
-				nextCase.x = actualCase.x - 1;
-				nextCase.y = actualCase.y - 1;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
-					LIFO_addElement (toSeeNext, nextCase);
-			}
-			*/
 			if ( ! upIsOut )
 			{
 				nextCase.x = actualCase.x;
 				nextCase.y = actualCase.y - 1;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
+				if ( (gMap[nextCase.x][nextCase.y]->item == NOTHING || gMap[nextCase.x][nextCase.y]->item == target) && gMap[nextCase.x][nextCase.y]->distance == -1
+					&& ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
 					LIFO_addElement (toSeeNext, nextCase);
 			}
-			/*
-			if ( ! rightIsOut && ! upIsOut)
-			{
-				nextCase.x = actualCase.x + 1;
-				nextCase.y = actualCase.y - 1;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
-					LIFO_addElement (toSeeNext, nextCase);
-			}
-			*/
 			if ( ! rightIsOut )
 			{
 				nextCase.x = actualCase.x + 1;
 				nextCase.y = actualCase.y;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
+				if ( (gMap[nextCase.x][nextCase.y]->item == NOTHING || gMap[nextCase.x][nextCase.y]->item == target) && gMap[nextCase.x][nextCase.y]->distance == -1
+					&& ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
 					LIFO_addElement (toSeeNext, nextCase);
 			}
-			/*
-			if ( ! rightIsOut && ! downIsOut )
-			{
-				nextCase.x = actualCase.x + 1;
-				nextCase.y = actualCase.y + 1;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
-					LIFO_addElement (toSeeNext, nextCase);
-			}
-			*/
 			if ( ! downIsOut )
 			{
 				nextCase.x = actualCase.x;
 				nextCase.y = actualCase.y + 1;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
+				if ( (gMap[nextCase.x][nextCase.y]->item == NOTHING || gMap[nextCase.x][nextCase.y]->item == target) && gMap[nextCase.x][nextCase.y]->distance == -1
+					&& ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
 					LIFO_addElement (toSeeNext, nextCase);
 			}
-			/*
-			if ( ! leftIsOut && ! downIsOut )
-			{
-				nextCase.x = actualCase.x - 1;
-				nextCase.y = actualCase.y + 1;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
-					LIFO_addElement (toSeeNext, nextCase);
-			}
-			*/
 			if ( ! leftIsOut )
 			{
 				nextCase.x = actualCase.x - 1;
 				nextCase.y = actualCase.y;
-				if ( (gMap[nextCase.x][nextCase.y] == ' ' || gMap[nextCase.x][nextCase.y] == target)
-				 && ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
+				if ( (gMap[nextCase.x][nextCase.y]->item == NOTHING || gMap[nextCase.x][nextCase.y]->item == target) && gMap[nextCase.x][nextCase.y]->distance == -1
+					&& ! LIFO_exists(toSee, nextCase) && ! LIFO_exists(toSeeNext, nextCase) )
 					LIFO_addElement (toSeeNext, nextCase);
 			}
 		}
 
-		label++;
-		if (label == 'T')
-			label++;
-		else if (label > 'Z')
-			label = 'Z';
+		actualDist++;
 	}
 
 	LIFO_freeList (toSee);
@@ -169,10 +123,10 @@ int labelMap (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage *perso, char target)
 	}
 }
 
-void getTargetPath (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position money_found)
+void getTargetPath (Case* gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position money_found)
 {
 	// Variables
-	char label = gMap[money_found.x][money_found.y];
+	int actualDist = gMap[money_found.x][money_found.y]->distance;
 	int leftIsOut = 0;
 	int upIsOut = 0;
 	int downIsOut = 0;
@@ -184,14 +138,12 @@ void getTargetPath (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position
 	// The first case is money_found
 	actualCase.x = money_found.x;
 	actualCase.y = money_found.y;
-	gMap[actualCase.x][actualCase.y] = '%';
+	if (gMap[actualCase.x][actualCase.y]->item != HOME)
+		gMap[actualCase.x][actualCase.y]->targeted = 1;
 
-	int countdown = 20;
-
-	while (label != 'A' && countdown > 0)
+	while (actualDist > 0)
 	{
-		countdown--;
-		label--;
+		actualDist--;
 
 		LIFO_addElement (targetPath, actualCase);
 
@@ -200,33 +152,11 @@ void getTargetPath (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position
 		downIsOut = (actualCase.y+1 < MAP_HEIGHT) ? 0 : 1;
 		upIsOut = (actualCase.y-1 >= 0) ? 0 : 1;
 
-		if ( ! leftIsOut && ! upIsOut )
-		{
-			nextCase.x = actualCase.x - 1;
-			nextCase.y = actualCase.y - 1;
-			if ( gMap[nextCase.x][nextCase.y] == label)
-			{
-				actualCase.x = nextCase.x;
-				actualCase.y = nextCase.y;
-				continue;
-			} 
-		}
 		if ( ! upIsOut )
 		{
 			nextCase.x = actualCase.x;
 			nextCase.y = actualCase.y - 1;
-			if ( gMap[nextCase.x][nextCase.y] == label)
-			{
-				actualCase.x = nextCase.x;
-				actualCase.y = nextCase.y;
-				continue;
-			} 
-		}
-		if ( ! rightIsOut && ! upIsOut)
-		{
-			nextCase.x = actualCase.x + 1;
-			nextCase.y = actualCase.y - 1;
-			if ( gMap[nextCase.x][nextCase.y] == label)
+			if ( gMap[nextCase.x][nextCase.y]->distance == actualDist)
 			{
 				actualCase.x = nextCase.x;
 				actualCase.y = nextCase.y;
@@ -237,18 +167,7 @@ void getTargetPath (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position
 		{
 			nextCase.x = actualCase.x + 1;
 			nextCase.y = actualCase.y;
-			if ( gMap[nextCase.x][nextCase.y] == label)
-			{
-				actualCase.x = nextCase.x;
-				actualCase.y = nextCase.y;
-				continue;
-			} 
-		}
-		if ( ! rightIsOut && ! downIsOut )
-		{
-			nextCase.x = actualCase.x + 1;
-			nextCase.y = actualCase.y + 1;
-			if ( gMap[nextCase.x][nextCase.y] == label)
+			if ( gMap[nextCase.x][nextCase.y]->distance == actualDist)
 			{
 				actualCase.x = nextCase.x;
 				actualCase.y = nextCase.y;
@@ -259,18 +178,7 @@ void getTargetPath (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position
 		{
 			nextCase.x = actualCase.x;
 			nextCase.y = actualCase.y + 1;
-			if ( gMap[nextCase.x][nextCase.y] == label)
-			{
-				actualCase.x = nextCase.x;
-				actualCase.y = nextCase.y;
-				continue;
-			} 
-		}
-		if ( ! leftIsOut && ! downIsOut )
-		{
-			nextCase.x = actualCase.x - 1;
-			nextCase.y = actualCase.y + 1;
-			if ( gMap[nextCase.x][nextCase.y] == label)
+			if ( gMap[nextCase.x][nextCase.y]->distance == actualDist)
 			{
 				actualCase.x = nextCase.x;
 				actualCase.y = nextCase.y;
@@ -281,7 +189,7 @@ void getTargetPath (char gMap[MAP_WIDTH][MAP_HEIGHT], Personage* perso, Position
 		{
 			nextCase.x = actualCase.x - 1;
 			nextCase.y = actualCase.y;
-			if ( gMap[nextCase.x][nextCase.y] == label)
+			if ( gMap[nextCase.x][nextCase.y]->distance == actualDist)
 			{
 				actualCase.x = nextCase.x;
 				actualCase.y = nextCase.y;

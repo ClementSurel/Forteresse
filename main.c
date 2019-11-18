@@ -31,7 +31,14 @@ int main (int argc, char *argv[])
 	init_pair(4, COLOR_RED, COLOR_BLACK);
 	init_pair(5, COLOR_BLUE, COLOR_BLACK);
 
-	initGameElements (&gElts);
+	if ( ! initGameElements (&gElts) )
+	{
+			nodelay(stdscr, 0);
+	printw("END OF THE GAME\n");
+	printw("Press a key to quit");
+	getch();
+	endwin();
+	}
 
 	last_t = clock()/(CLOCKS_PER_SEC/1000);
 

@@ -13,7 +13,7 @@
 
 
 
-void initGameElements (GameElements* gElts)
+int initGameElements (GameElements* gElts)
 {
 	// Variables
 	int i, j;
@@ -30,9 +30,21 @@ void initGameElements (GameElements* gElts)
 		}
 	}
 
+	for (i = 0; i < MAP_WIDTH; i++)
+	{
+		for (j = 0; j < MAP_HEIGHT; j++)
+		{
+			gElts->ngMap[i][j] = malloc(sizeof(Case));
+			if (gElts->ngMap[i][j] == NULL)
+				return 0;
+			gElts->ngMap[i][j]->item = NOTHING;
+		}
+	}
+
+	// Home position
 	gElts->home.x = 9;
 	gElts->home.y = 5;
-	gElts->gMap[gElts->home.x][gElts->home.y] == '^';
+	gElts->ngMap[gElts->home.x][gElts->home.y]->item = HOME;
 
 	gElts->gMap[0][9] = '#';
 	gElts->gMap[1][9] = '#';
@@ -56,6 +68,27 @@ void initGameElements (GameElements* gElts)
 	gElts->gMap[14][8] = '#';
 	gElts->gMap[14][9] = '#';
 
+	gElts->ngMap[0][9]->item = WALL;
+	gElts->ngMap[1][9]->item = WALL;
+	gElts->ngMap[2][7]->item = WALL;
+	gElts->ngMap[2][8]->item = WALL;
+	gElts->ngMap[2][9]->item = WALL;
+	gElts->ngMap[3][2]->item = WALL;
+	gElts->ngMap[3][3]->item = WALL;
+	gElts->ngMap[3][4]->item = WALL;
+	gElts->ngMap[3][9]->item = WALL;
+	gElts->ngMap[4][2]->item = WALL;
+	gElts->ngMap[5][2]->item = WALL;
+	gElts->ngMap[6][2]->item = WALL;
+	gElts->ngMap[7][2]->item = WALL;
+	gElts->ngMap[7][8]->item = WALL;
+	gElts->ngMap[7][9]->item = WALL;
+	gElts->ngMap[7][10]->item = WALL;
+	gElts->ngMap[11][5]->item = WALL;
+	gElts->ngMap[13][8]->item = WALL;
+	gElts->ngMap[13][9]->item = WALL;
+	gElts->ngMap[14][8]->item = WALL;
+	gElts->ngMap[14][9]->item = WALL;
 
 
 /*
@@ -75,11 +108,21 @@ void initGameElements (GameElements* gElts)
 
 	// Initialize the amount of money
 	gElts->amount_money = 500;
+
+	return 1;
 }
 
 void freeGameElements (GameElements* gElts)
 {
-	int i;
+	int i, j;
+
+	for (i = 0; i < MAP_WIDTH; i++)
+	{
+		for (j = 0; j < MAP_HEIGHT; j++)
+		{
+			free(gElts->ngMap[i][j]);
+		}
+	}
 
 	for (i = 0; i < gElts->nb_perso; i++)
 	{
@@ -121,12 +164,14 @@ void addMoney (GameElements* gElts)
 {
 	int x = rand() % MAP_WIDTH;
 	int y = rand() % MAP_HEIGHT;
-	if (gElts->gMap[x][y] == ' ')
+
+	if (gElts->ngMap[x][y]->item == NOTHING)
 	{
-		gElts->gMap[x][y] = '$';
+		gElts->ngMap[x][y]->item = MONEY;
 		gElts->money_units++;
 		gElts->money_visible++;
 	}	
+
 }
 
 void new_turn (GameElements* gElts)
@@ -174,9 +219,7 @@ void lookingForMoney (GameElements* gElts, int indice)
 	int found_money = 0; // Boolean
 	int max_reached = 0; // Boolean
 
-	gElts->gMap[perso->pos.x][perso->pos.y] = '*';
-
-	if ( labelMap (gElts->gMap, perso, '$') )
+	if ( labelMap (gElts->ngMap, perso, MONEY) )
 	{
 		gElts->money_visible--;
 		perso->state = GETTING_MONEY;
@@ -194,16 +237,16 @@ void gettingMoney (GameElements* gElts, int indice)
 	{
 		gElts->money_units--;
 		perso->bag = MONEY;
-		gElts->gMap[gElts->home.x][gElts->home.y] = '^';
-		if ( ! labelMap(gElts->gMap, perso, '^'))
+		perso->state = GOING_HOME;
+		if ( ! labelMap(gElts->ngMap, perso, HOME))
 		{
 			printw("Failed to find home\n");
 			refresh();
 			nodelay(stdscr, 0);
 			getch();
 			nodelay(stdscr, 1);
+			perso->state = WAITING;
 		}
-		perso->state = GOING_HOME;
 		//perso->target.x = gElts->home.x;
 		//perso->target.y = gElts->home.y;
 	}
@@ -246,23 +289,13 @@ int reachTarget (GameElements* gElts, int indice)
 	else if (nextCase.y > perso->pos.y)
 		perso->pos.y++;
 
-	nextCase = LIFO_readElement (perso->target);
-	if (  (nextCase.x == actualPos.x -1 || nextCase.x == actualPos.x +1) && (nextCase.y == actualPos.y +1 || nextCase.y == actualPos.y -1) )
-	{
-		LIFO_pop(perso->target);
-		if (nextCase.x < perso->pos.x)
-			perso->pos.x--; 
-		else if (nextCase.x > perso->pos.x)
-			perso->pos.x++;
-
-		if (nextCase.y < perso->pos.y)
-			perso->pos.y--; 
-		else if (nextCase.y > perso->pos.y)
-			perso->pos.y++;
-	}
-
 	if (perso->target->nb_elms == 0)
+	{
+		gElts->ngMap[perso->pos.x][perso->pos.y]->targeted = 0;
+		if (gElts->ngMap[perso->pos.x][perso->pos.y]->item == MONEY)
+			gElts->ngMap[perso->pos.x][perso->pos.y]->item = NOTHING;
 		return 1;
+	}
 	else
 		return 0;
 }

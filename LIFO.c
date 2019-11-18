@@ -85,7 +85,7 @@ void LIFO_addElement (LIFO_List* LIFO_list, Position val)
 
 Position LIFO_readElement (LIFO_List* LIFO_list)
 {
-    Position element_value = {0, 0};
+    Position element_value = {-1, -1};
 
     if (LIFO_list == NULL)
         return element_value;
@@ -101,7 +101,7 @@ Position LIFO_readElement (LIFO_List* LIFO_list)
 
 Position LIFO_pop (LIFO_List* LIFO_list)
 {
-    Position val = {0, 0};
+    Position val = {-1, -1};
     Element *actualElm = NULL;
 
     if (LIFO_list == NULL)

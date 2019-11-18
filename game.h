@@ -4,7 +4,7 @@
 #include "constants.h"
 
 /* Manage the game elements */
-void initGameElements (GameElements*);
+int initGameElements (GameElements*);
 
 void freeGameElements (GameElements*);
 
