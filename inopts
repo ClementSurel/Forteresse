@@ -1,0 +1,998 @@
+ncurses(3NCURSES)                                                                                                                              ncurses(3NCURSES)
+
+NNAAMMEE
+       nnccuurrsseess - CRT screen handling and optimization package
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<ccuurrsseess..hh>>
+
+DDEESSCCRRIIPPTTIIOONN
+       The nnccuurrsseess library routines give the user a terminal-independent method of updating character screens with reasonable optimization.  This implementation
+       is “new curses” (ncurses) and is the approved replacement for 4.4BSD classic curses, which has been discontinued.  This  describes  nnccuurrsseess  version  6.1
+       (patch 20180127).
+
+       The  nnccuurrsseess  library emulates the curses library of System V Release 4 UNIX, and XPG4 (X/Open Portability Guide) curses (also known as XSI curses).  XSI
+       stands for X/Open System Interfaces Extension.  The nnccuurrsseess library is freely redistributable in source form.  Differences from the SVr4 curses are  sum‐
+       marized  under the EEXXTTEENNSSIIOONNSS and PPOORRTTAABBIILLIITTYY sections below and described in detail in the respective EEXXTTEENNSSIIOONNSS, PPOORRTTAABBIILLIITTYY and BBUUGGSS sections of indi‐
+       vidual man pages.
+
+       The nnccuurrsseess library also provides many useful extensions, i.e., features which cannot be implemented by a simple add-on library but which require  access
+       to the internals of the library.
+
+       A  program  using  these  routines must be linked with the --llnnccuurrsseess option, or (if it has been generated) with the debugging library --llnnccuurrsseess__gg.  (Your
+       system integrator may also have installed these libraries under the names --llccuurrsseess and --llccuurrsseess__gg.)  The ncurses_g library generates  trace  logs  (in  a
+       file called 'trace' in the current directory) that describe curses actions.  See also the section on AALLTTEERRNNAATTEE CCOONNFFIIGGUURRAATTIIOONNSS.
+
+       The  nnccuurrsseess package supports: overall screen, window and pad manipulation; output to windows and pads; reading terminal input; control over terminal and
+       ccuurrsseess input and output options; environment query routines; color manipulation; use of soft label keys; terminfo capabilities; and access  to  low-level
+       terminal-manipulation routines.
+
+   IInniittiiaalliizzaattiioonn
+       The library uses the locale which the calling program has initialized.  That is normally done with sseettllooccaallee:
+
+           sseettllooccaallee((LLCC__AALLLL,, """"));;
+
+       If  the  locale is not initialized, the library assumes that characters are printable as in ISO-8859-1, to work with certain legacy programs.  You should
+       initialize the locale and not rely on specific details of the library when the locale has not been setup.
+
+       The function iinniittssccrr or nneewwtteerrmm must be called to initialize the library before any of the other routines that deal with windows and  screens  are  used.
+       The routine eennddwwiinn(3X) must be called before exiting.
+
+       To get character-at-a-time input without echoing (most interactive, screen oriented programs want this), the following sequence should be used:
+
+           iinniittssccrr(());; ccbbrreeaakk(());; nnooeecchhoo(());;
+
+       Most programs would additionally use the sequence:
+
+           nnoonnll(());;
+           iinnttrrfflluusshh((ssttddssccrr,, FFAALLSSEE));;
+           kkeeyyppaadd((ssttddssccrr,, TTRRUUEE));;
+
+       Before a ccuurrsseess program is run, the tab stops of the terminal should be set and its initialization strings, if defined, must be output.  This can be done
+       by executing the ttppuutt iinniitt command after the shell environment variable TTEERRMM has been exported.  ttsseett((11)) is usually responsible  for  doing  this.   [See
+       tteerrmmiinnffoo(5) for further details.]
+
+   DDaattaattyyppeess
+       The nnccuurrsseess library permits manipulation of data structures, called _w_i_n_d_o_w_s, which can be thought of as two-dimensional arrays of characters representing
+       all or part of a CRT screen.  A default window called ssttddssccrr, which is the size of the terminal screen, is supplied.  Others may be created with nneewwwwiinn.
+
+       Note that ccuurrsseess does not handle overlapping windows, that's done by the ppaanneell(3CURSES) library.  This means that you can either use ssttddssccrr or divide the
+       screen into tiled windows and not using ssttddssccrr at all.  Mixing the two will result in unpredictable, and undesired, effects.
+
+       Windows  are  referred  to  by  variables  declared as WWIINNDDOOWW **.  These data structures are manipulated with routines described here and elsewhere in the
+       nnccuurrsseess manual pages.  Among those, the most basic routines are mmoovvee and aaddddcchh.  More general versions of these routines are included with  names  begin‐
+       ning with ww, allowing the user to specify a window.  The routines not beginning with ww affect ssttddssccrr.
+
+       After  using  routines to manipulate a window, rreeffrreesshh(3X) is called, telling ccuurrsseess to make the user's CRT screen look like ssttddssccrr.  The characters in a
+       window are actually of type cchhttyyppee, (character and attribute data) so that other information about the character may also be stored with each character.
+
+       Special windows called _p_a_d_s may also be manipulated.  These are windows which are not constrained to the size of the screen and whose contents  need  not
+       be completely displayed.  See ppaadd(3NCURSES) for more information.
+
+       In  addition to drawing characters on the screen, video attributes and colors may be supported, causing the characters to show up in such modes as under‐
+       lined, in reverse video, or in color on terminals that support such display enhancements.  Line drawing characters may be specified  to  be  output.   On
+       input,  ccuurrsseess  is  also able to translate arrow and function keys that transmit escape sequences into single values.  The video attributes, line drawing
+       characters, and input values use names, defined in <<ccuurrsseess..hh>>, such as AA__RREEVVEERRSSEE, AACCSS__HHLLIINNEE, and KKEEYY__LLEEFFTT.
+
+   EEnnvviirroonnmmeenntt vvaarriiaabblleess
+       If the environment variables LLIINNEESS and CCOOLLUUMMNNSS are set, or if the program is executing in a window environment, line and column information in the  envi‐
+       ronment will override information read by _t_e_r_m_i_n_f_o.  This would affect a program running in an AT&T 630 layer, for example, where the size of a screen is
+       changeable (see EENNVVIIRROONNMMEENNTT).
+
+       If the environment variable TTEERRMMIINNFFOO is defined, any program using ccuurrsseess checks for a local terminal definition before checking in the  standard  place.
+       For example, if TTEERRMM is set to aatttt44442244, then the compiled terminal definition is found in
+
+           //eettcc//tteerrmmiinnffoo//aa//aatttt44442244.
+
+       (The  aa  is  copied  from the first letter of aatttt44442244 to avoid creation of huge directories.)  However, if TTEERRMMIINNFFOO is set to $$HHOOMMEE//mmyytteerrmmss, ccuurrsseess first
+       checks
+
+           $$HHOOMMEE//mmyytteerrmmss//aa//aatttt44442244,
+
+       and if that fails, it then checks
+
+           //eettcc//tteerrmmiinnffoo//aa//aatttt44442244.
+
+       This is useful for developing experimental definitions or when write permission in //eettcc//tteerrmmiinnffoo is not available.
+
+       The integer variables LLIINNEESS and CCOOLLSS are defined in <<ccuurrsseess..hh>> and will be filled in by iinniittssccrr with the size of the  screen.   The  constants  TTRRUUEE  and
+       FFAALLSSEE have the values 11 and 00, respectively.
+
+       The ccuurrsseess routines also define the WWIINNDDOOWW ** variable ccuurrssccrr which is used for certain low-level operations like clearing and redrawing a screen contain‐
+       ing garbage.  The ccuurrssccrr can be used in only a few routines.
+
+   RRoouuttiinnee aanndd AArrgguummeenntt NNaammeess
+       Many ccuurrsseess routines have two or more versions.  The routines prefixed with ww require a window argument.  The routines prefixed  with  pp  require  a  pad
+       argument.  Those without a prefix generally use ssttddssccrr.
+
+       The  routines  prefixed  with  mmvv require a _y and _x coordinate to move to before performing the appropriate action.  The mmvv routines imply a call to mmoovvee
+       before the call to the other routine.  The coordinate _y always refers to the row (of the window), and _x always refers to the column.  The upper left-hand
+       corner is always (0,0), not (1,1).
+
+       The routines prefixed with mmvvww take both a window argument and _x and _y coordinates.  The window argument is always specified before the coordinates.
+
+       In each case, _w_i_n is the window affected, and _p_a_d is the pad affected; _w_i_n and _p_a_d are always pointers to type WWIINNDDOOWW.
+
+       Option  setting  routines  require a Boolean flag _b_f with the value TTRRUUEE or FFAALLSSEE; _b_f is always of type bbooooll.  Most of the data types used in the library
+       routines, such as WWIINNDDOOWW, SSCCRREEEENN, bbooooll, and cchhttyyppee are defined in <<ccuurrsseess..hh>>.  Types used for the terminfo routines  such  as  TTEERRMMIINNAALL  are  defined  in
+       <<tteerrmm..hh>>.
+
+       This manual page describes functions which may appear in any configuration of the library.  There are two common configurations of the library:
+
+          _n_c_u_r_s_e_s
+               the "normal" library, which handles 8-bit characters.  The normal (8-bit) library stores characters combined with attributes in cchhttyyppee data.
+
+               Attributes alone (no corresponding character) may be stored in cchhttyyppee or the equivalent aattttrr__tt data.  In either case, the data is stored in some‐
+               thing like an integer.
+
+               Each cell (row and column) in a WWIINNDDOOWW is stored as a cchhttyyppee.
+
+          _n_c_u_r_s_e_s_w
+               the so-called "wide" library, which handles multibyte characters (see the section on AALLTTEERRNNAATTEE CCOONNFFIIGGUURRAATTIIOONNSS).  The "wide" library includes  all
+               of the calls from the "normal" library.  It adds about one third more calls using data types which store multibyte characters:
+
+               cccchhaarr__tt
+                    corresponds  to  cchhttyyppee.   However  it  is  a structure, because more data is stored than can fit into an integer.  The characters are large
+                    enough to require a full integer value - and there may be more than one character per cell.  The video attributes and color  are  stored  in
+                    separate fields of the structure.
+
+                    Each cell (row and column) in a WWIINNDDOOWW is stored as a cccchhaarr__tt.
+
+               wwcchhaarr__tt
+                    stores a "wide" character.  Like cchhttyyppee, this may be an integer.
+
+               wwiinntt__tt
+                    stores a wwcchhaarr__tt or WWEEOOFF - not the same, though both may have the same size.
+
+               The  "wide"  library provides new functions which are analogous to functions in the "normal" library.  There is a naming convention which relates
+               many of the normal/wide variants: a "_w" is inserted into the name.  For example, wwaaddddcchh becomes wwaadddd__wwcchh.
+
+   RRoouuttiinnee NNaammee IInnddeexx
+       The following table lists each ccuurrsseess routine and the name of the manual page on which it is described.  Routines flagged with “*” are  ncurses-specific,
+       not described by XPG4 or present in SVr4.
+
+                                                          ccuurrsseess Routine Name      Manual Page Name
+                                                          ───────────────────────────────────────────────────
+                                                          COLOR_PAIR               ccoolloorr(3NCURSES)
+                                                          PAIR_NUMBER              aattttrr(3NCURSES)
+                                                          _nc_free_and_exit        mmeemmlleeaakkss(3NCURSES)*
+                                                          _nc_freeall              mmeemmlleeaakkss(3NCURSES)*
+                                                          _nc_tracebits            ttrraaccee(3NCURSES)*
+                                                          _traceattr               ttrraaccee(3NCURSES)*
+                                                          _traceattr2              ttrraaccee(3NCURSES)*
+                                                          _tracechar               ttrraaccee(3NCURSES)*
+                                                          _tracechtype             ttrraaccee(3NCURSES)*
+                                                          _tracechtype2            ttrraaccee(3NCURSES)*
+                                                          _tracedump               ttrraaccee(3NCURSES)*
+                                                          _tracef                  ttrraaccee(3NCURSES)*
+                                                          _tracemouse              ttrraaccee(3NCURSES)*
+                                                          add_wch                  aadddd__wwcchh(3NCURSES)
+                                                          add_wchnstr              aadddd__wwcchhssttrr(3NCURSES)
+                                                          add_wchstr               aadddd__wwcchhssttrr(3NCURSES)
+                                                          addch                    aaddddcchh(3NCURSES)
+                                                          addchnstr                aaddddcchhssttrr(3NCURSES)
+                                                          addchstr                 aaddddcchhssttrr(3NCURSES)
+                                                          addnstr                  aaddddssttrr(3NCURSES)
+                                                          addnwstr                 aaddddwwssttrr(3NCURSES)
+                                                          addstr                   aaddddssttrr(3NCURSES)
+                                                          addwstr                  aaddddwwssttrr(3NCURSES)
+                                                          alloc_pair               nneeww__ppaaiirr(3NCURSES)*
+                                                          assume_default_colors    ddeeffaauulltt__ccoolloorrss(3NCURSES)*
+                                                          attr_get                 aattttrr(3NCURSES)
+                                                          attr_off                 aattttrr(3NCURSES)
+                                                          attr_on                  aattttrr(3NCURSES)
+                                                          attr_set                 aattttrr(3NCURSES)
+                                                          attroff                  aattttrr(3NCURSES)
+                                                          attron                   aattttrr(3NCURSES)
+                                                          attrset                  aattttrr(3NCURSES)
+                                                          baudrate                 tteerrmmaattttrrss(3NCURSES)
+                                                          beep                     bbeeeepp(3NCURSES)
+                                                          bkgd                     bbkkggdd(3NCURSES)
+                                                          bkgdset                  bbkkggdd(3NCURSES)
+                                                          bkgrnd                   bbkkggrrnndd(3NCURSES)
+                                                          bkgrndset                bbkkggrrnndd(3NCURSES)
+                                                          border                   bboorrddeerr(3NCURSES)
+                                                          border_set               bboorrddeerr__sseett(3NCURSES)
+                                                          box                      bboorrddeerr(3NCURSES)
+                                                          box_set                  bboorrddeerr__sseett(3NCURSES)
+                                                          can_change_color         ccoolloorr(3NCURSES)
+                                                          cbreak                   iinnooppttss(3NCURSES)
+
+                                                          chgat                    aattttrr(3NCURSES)
+                                                          clear                    cclleeaarr(3NCURSES)
+                                                          clearok                  oouuttooppttss(3NCURSES)
+                                                          clrtobot                 cclleeaarr(3NCURSES)
+                                                          clrtoeol                 cclleeaarr(3NCURSES)
+                                                          color_content            ccoolloorr(3NCURSES)
+                                                          color_set                aattttrr(3NCURSES)
+                                                          copywin                  oovveerrllaayy(3NCURSES)
+                                                          curs_set                 kkeerrnneell(3NCURSES)
+                                                          curses_version           eexxtteennssiioonnss(3NCURSES)*
+                                                          def_prog_mode            kkeerrnneell(3NCURSES)
+                                                          def_shell_mode           kkeerrnneell(3NCURSES)
+                                                          define_key               ddeeffiinnee__kkeeyy(3NCURSES)*
+                                                          del_curterm              tteerrmmiinnffoo(3NCURSES)
+                                                          delay_output             uuttiill(3NCURSES)
+                                                          delch                    ddeellcchh(3NCURSES)
+                                                          deleteln                 ddeelleetteellnn(3NCURSES)
+                                                          delscreen                iinniittssccrr(3NCURSES)
+                                                          delwin                   wwiinnddooww(3NCURSES)
+                                                          derwin                   wwiinnddooww(3NCURSES)
+                                                          doupdate                 rreeffrreesshh(3NCURSES)
+                                                          dupwin                   wwiinnddooww(3NCURSES)
+                                                          echo                     iinnooppttss(3NCURSES)
+                                                          echo_wchar               aadddd__wwcchh(3NCURSES)
+                                                          echochar                 aaddddcchh(3NCURSES)
+                                                          endwin                   iinniittssccrr(3NCURSES)
+                                                          erase                    cclleeaarr(3NCURSES)
+                                                          erasechar                tteerrmmaattttrrss(3NCURSES)
+                                                          erasewchar               tteerrmmaattttrrss(3NCURSES)
+                                                          extended_color_content   ccoolloorr(3NCURSES)*
+                                                          extended_pair_content    ccoolloorr(3NCURSES)*
+                                                          extended_slk_color       ssllkk(3NCURSES)*
+                                                          filter                   uuttiill(3NCURSES)
+                                                          find_pair                nneeww__ppaaiirr(3NCURSES)*
+                                                          flash                    bbeeeepp(3NCURSES)
+                                                          flushinp                 uuttiill(3NCURSES)
+                                                          free_pair                nneeww__ppaaiirr(3NCURSES)*
+                                                          get_wch                  ggeett__wwcchh(3NCURSES)
+                                                          get_wstr                 ggeett__wwssttrr(3NCURSES)
+                                                          getattrs                 aattttrr(3NCURSES)
+                                                          getbegx                  lleeggaaccyy(3NCURSES)*
+                                                          getbegy                  lleeggaaccyy(3NCURSES)*
+                                                          getbegyx                 ggeettyyxx(3NCURSES)
+                                                          getbkgd                  bbkkggdd(3NCURSES)
+                                                          getbkgrnd                bbkkggrrnndd(3NCURSES)
+                                                          getcchar                 ggeettcccchhaarr(3NCURSES)
+                                                          getch                    ggeettcchh(3NCURSES)
+                                                          getcurx                  lleeggaaccyy(3NCURSES)*
+                                                          getcury                  lleeggaaccyy(3NCURSES)*
+                                                          getmaxx                  lleeggaaccyy(3NCURSES)*
+                                                          getmaxy                  lleeggaaccyy(3NCURSES)*
+                                                          getmaxyx                 ggeettyyxx(3NCURSES)
+                                                          getmouse                 mmoouussee(3NCURSES)*
+                                                          getn_wstr                ggeett__wwssttrr(3NCURSES)
+                                                          getnstr                  ggeettssttrr(3NCURSES)
+                                                          getparx                  lleeggaaccyy(3NCURSES)*
+                                                          getpary                  lleeggaaccyy(3NCURSES)*
+                                                          getparyx                 ggeettyyxx(3NCURSES)
+                                                          getstr                   ggeettssttrr(3NCURSES)
+                                                          getsyx                   kkeerrnneell(3NCURSES)
+                                                          getwin                   uuttiill(3NCURSES)
+                                                          getyx                    ggeettyyxx(3NCURSES)
+                                                          halfdelay                iinnooppttss(3NCURSES)
+                                                          has_colors               ccoolloorr(3NCURSES)
+                                                          has_ic                   tteerrmmaattttrrss(3NCURSES)
+                                                          has_il                   tteerrmmaattttrrss(3NCURSES)
+                                                          has_key                  ggeettcchh(3NCURSES)*
+
+                                                          hline                    bboorrddeerr(3NCURSES)
+                                                          hline_set                bboorrddeerr__sseett(3NCURSES)
+                                                          idcok                    oouuttooppttss(3NCURSES)
+                                                          idlok                    oouuttooppttss(3NCURSES)
+                                                          immedok                  oouuttooppttss(3NCURSES)
+                                                          in_wch                   iinn__wwcchh(3NCURSES)
+                                                          in_wchnstr               iinn__wwcchhssttrr(3NCURSES)
+                                                          in_wchstr                iinn__wwcchhssttrr(3NCURSES)
+                                                          inch                     iinncchh(3NCURSES)
+                                                          inchnstr                 iinncchhssttrr(3NCURSES)
+                                                          inchstr                  iinncchhssttrr(3NCURSES)
+                                                          init_color               ccoolloorr(3NCURSES)
+                                                          init_extended_color      ccoolloorr(3NCURSES)*
+                                                          init_extended_pair       ccoolloorr(3NCURSES)*
+                                                          init_pair                ccoolloorr(3NCURSES)
+                                                          initscr                  iinniittssccrr(3NCURSES)
+                                                          innstr                   iinnssttrr(3NCURSES)
+                                                          innwstr                  iinnwwssttrr(3NCURSES)
+                                                          ins_nwstr                iinnss__wwssttrr(3NCURSES)
+                                                          ins_wch                  iinnss__wwcchh(3NCURSES)
+                                                          ins_wstr                 iinnss__wwssttrr(3NCURSES)
+                                                          insch                    iinnsscchh(3NCURSES)
+                                                          insdelln                 ddeelleetteellnn(3NCURSES)
+                                                          insertln                 ddeelleetteellnn(3NCURSES)
+                                                          insnstr                  iinnssssttrr(3NCURSES)
+                                                          insstr                   iinnssssttrr(3NCURSES)
+                                                          instr                    iinnssttrr(3NCURSES)
+                                                          intrflush                iinnooppttss(3NCURSES)
+                                                          inwstr                   iinnwwssttrr(3NCURSES)
+                                                          is_cleared               ooppaaqquuee(3NCURSES)*
+                                                          is_idcok                 ooppaaqquuee(3NCURSES)*
+                                                          is_idlok                 ooppaaqquuee(3NCURSES)*
+                                                          is_immedok               ooppaaqquuee(3NCURSES)*
+                                                          is_keypad                ooppaaqquuee(3NCURSES)*
+                                                          is_leaveok               ooppaaqquuee(3NCURSES)*
+                                                          is_linetouched           ttoouucchh(3NCURSES)
+                                                          is_nodelay               ooppaaqquuee(3NCURSES)*
+                                                          is_notimeout             ooppaaqquuee(3NCURSES)*
+                                                          is_pad                   ooppaaqquuee(3NCURSES)*
+                                                          is_scrollok              ooppaaqquuee(3NCURSES)*
+                                                          is_subwin                ooppaaqquuee(3NCURSES)*
+                                                          is_syncok                ooppaaqquuee(3NCURSES)*
+                                                          is_term_resized          rreessiizzeetteerrmm(3NCURSES)*
+                                                          is_wintouched            ttoouucchh(3NCURSES)
+                                                          isendwin                 iinniittssccrr(3NCURSES)
+                                                          key_defined              kkeeyy__ddeeffiinneedd(3NCURSES)*
+                                                          key_name                 uuttiill(3NCURSES)
+                                                          keybound                 kkeeyybboouunndd(3NCURSES)*
+                                                          keyname                  uuttiill(3NCURSES)
+                                                          keyok                    kkeeyyookk(3NCURSES)*
+                                                          keypad                   iinnooppttss(3NCURSES)
+                                                          killchar                 tteerrmmaattttrrss(3NCURSES)
+                                                          killwchar                tteerrmmaattttrrss(3NCURSES)
+                                                          leaveok                  oouuttooppttss(3NCURSES)
+                                                          longname                 tteerrmmaattttrrss(3NCURSES)
+                                                          mcprint                  pprriinntt(3NCURSES)*
+                                                          meta                     iinnooppttss(3NCURSES)
+                                                          mouse_trafo              mmoouussee(3NCURSES)*
+                                                          mouseinterval            mmoouussee(3NCURSES)*
+                                                          mousemask                mmoouussee(3NCURSES)*
+                                                          move                     mmoovvee(3NCURSES)
+                                                          mvadd_wch                aadddd__wwcchh(3NCURSES)
+                                                          mvadd_wchnstr            aadddd__wwcchhssttrr(3NCURSES)
+                                                          mvadd_wchstr             aadddd__wwcchhssttrr(3NCURSES)
+                                                          mvaddch                  aaddddcchh(3NCURSES)
+                                                          mvaddchnstr              aaddddcchhssttrr(3NCURSES)
+                                                          mvaddchstr               aaddddcchhssttrr(3NCURSES)
+
+                                                          mvaddnstr                aaddddssttrr(3NCURSES)
+                                                          mvaddnwstr               aaddddwwssttrr(3NCURSES)
+                                                          mvaddstr                 aaddddssttrr(3NCURSES)
+                                                          mvaddwstr                aaddddwwssttrr(3NCURSES)
+                                                          mvchgat                  aattttrr(3NCURSES)
+                                                          mvcur                    tteerrmmiinnffoo(3NCURSES)
+                                                          mvdelch                  ddeellcchh(3NCURSES)
+                                                          mvderwin                 wwiinnddooww(3NCURSES)
+                                                          mvget_wch                ggeett__wwcchh(3NCURSES)
+                                                          mvget_wstr               ggeett__wwssttrr(3NCURSES)
+                                                          mvgetch                  ggeettcchh(3NCURSES)
+                                                          mvgetn_wstr              ggeett__wwssttrr(3NCURSES)
+                                                          mvgetnstr                ggeettssttrr(3NCURSES)
+                                                          mvgetstr                 ggeettssttrr(3NCURSES)
+                                                          mvhline                  bboorrddeerr(3NCURSES)
+                                                          mvhline_set              bboorrddeerr__sseett(3NCURSES)
+                                                          mvin_wch                 iinn__wwcchh(3NCURSES)
+                                                          mvin_wchnstr             iinn__wwcchhssttrr(3NCURSES)
+                                                          mvin_wchstr              iinn__wwcchhssttrr(3NCURSES)
+                                                          mvinch                   iinncchh(3NCURSES)
+                                                          mvinchnstr               iinncchhssttrr(3NCURSES)
+                                                          mvinchstr                iinncchhssttrr(3NCURSES)
+                                                          mvinnstr                 iinnssttrr(3NCURSES)
+                                                          mvinnwstr                iinnwwssttrr(3NCURSES)
+                                                          mvins_nwstr              iinnss__wwssttrr(3NCURSES)
+                                                          mvins_wch                iinnss__wwcchh(3NCURSES)
+                                                          mvins_wstr               iinnss__wwssttrr(3NCURSES)
+                                                          mvinsch                  iinnsscchh(3NCURSES)
+                                                          mvinsnstr                iinnssssttrr(3NCURSES)
+                                                          mvinsstr                 iinnssssttrr(3NCURSES)
+                                                          mvinstr                  iinnssttrr(3NCURSES)
+                                                          mvinwstr                 iinnwwssttrr(3NCURSES)
+                                                          mvprintw                 pprriinnttww(3NCURSES)
+                                                          mvscanw                  ssccaannww(3NCURSES)
+                                                          mvvline                  bboorrddeerr(3NCURSES)
+                                                          mvvline_set              bboorrddeerr__sseett(3NCURSES)
+                                                          mvwadd_wch               aadddd__wwcchh(3NCURSES)
+                                                          mvwadd_wchnstr           aadddd__wwcchhssttrr(3NCURSES)
+                                                          mvwadd_wchstr            aadddd__wwcchhssttrr(3NCURSES)
+                                                          mvwaddch                 aaddddcchh(3NCURSES)
+                                                          mvwaddchnstr             aaddddcchhssttrr(3NCURSES)
+                                                          mvwaddchstr              aaddddcchhssttrr(3NCURSES)
+                                                          mvwaddnstr               aaddddssttrr(3NCURSES)
+                                                          mvwaddnwstr              aaddddwwssttrr(3NCURSES)
+                                                          mvwaddstr                aaddddssttrr(3NCURSES)
+                                                          mvwaddwstr               aaddddwwssttrr(3NCURSES)
+                                                          mvwchgat                 aattttrr(3NCURSES)
+                                                          mvwdelch                 ddeellcchh(3NCURSES)
+                                                          mvwget_wch               ggeett__wwcchh(3NCURSES)
+                                                          mvwget_wstr              ggeett__wwssttrr(3NCURSES)
+                                                          mvwgetch                 ggeettcchh(3NCURSES)
+                                                          mvwgetn_wstr             ggeett__wwssttrr(3NCURSES)
+                                                          mvwgetnstr               ggeettssttrr(3NCURSES)
+                                                          mvwgetstr                ggeettssttrr(3NCURSES)
+                                                          mvwhline                 bboorrddeerr(3NCURSES)
+                                                          mvwhline_set             bboorrddeerr__sseett(3NCURSES)
+                                                          mvwin                    wwiinnddooww(3NCURSES)
+                                                          mvwin_wch                iinn__wwcchh(3NCURSES)
+                                                          mvwin_wchnstr            iinn__wwcchhssttrr(3NCURSES)
+                                                          mvwin_wchstr             iinn__wwcchhssttrr(3NCURSES)
+                                                          mvwinch                  iinncchh(3NCURSES)
+                                                          mvwinchnstr              iinncchhssttrr(3NCURSES)
+                                                          mvwinchstr               iinncchhssttrr(3NCURSES)
+                                                          mvwinnstr                iinnssttrr(3NCURSES)
+                                                          mvwinnwstr               iinnwwssttrr(3NCURSES)
+                                                          mvwins_nwstr             iinnss__wwssttrr(3NCURSES)
+                                                          mvwins_wch               iinnss__wwcchh(3NCURSES)
+
+                                                          mvwins_wstr              iinnss__wwssttrr(3NCURSES)
+                                                          mvwinsch                 iinnsscchh(3NCURSES)
+                                                          mvwinsnstr               iinnssssttrr(3NCURSES)
+                                                          mvwinsstr                iinnssssttrr(3NCURSES)
+                                                          mvwinstr                 iinnssttrr(3NCURSES)
+                                                          mvwinwstr                iinnwwssttrr(3NCURSES)
+                                                          mvwprintw                pprriinnttww(3NCURSES)
+                                                          mvwscanw                 ssccaannww(3NCURSES)
+                                                          mvwvline                 bboorrddeerr(3NCURSES)
+                                                          mvwvline_set             bboorrddeerr__sseett(3NCURSES)
+                                                          napms                    kkeerrnneell(3NCURSES)
+                                                          newpad                   ppaadd(3NCURSES)
+                                                          newterm                  iinniittssccrr(3NCURSES)
+                                                          newwin                   wwiinnddooww(3NCURSES)
+                                                          nl                       oouuttooppttss(3NCURSES)
+                                                          nocbreak                 iinnooppttss(3NCURSES)
+                                                          nodelay                  iinnooppttss(3NCURSES)
+                                                          noecho                   iinnooppttss(3NCURSES)
+                                                          nofilter                 uuttiill(3NCURSES)*
+                                                          nonl                     oouuttooppttss(3NCURSES)
+                                                          noqiflush                iinnooppttss(3NCURSES)
+                                                          noraw                    iinnooppttss(3NCURSES)
+                                                          notimeout                iinnooppttss(3NCURSES)
+                                                          overlay                  oovveerrllaayy(3NCURSES)
+                                                          overwrite                oovveerrllaayy(3NCURSES)
+                                                          pair_content             ccoolloorr(3NCURSES)
+                                                          pechochar                ppaadd(3NCURSES)
+                                                          pnoutrefresh             ppaadd(3NCURSES)
+                                                          prefresh                 ppaadd(3NCURSES)
+                                                          printw                   pprriinnttww(3NCURSES)
+                                                          putp                     tteerrmmiinnffoo(3NCURSES)
+                                                          putwin                   uuttiill(3NCURSES)
+                                                          qiflush                  iinnooppttss(3NCURSES)
+                                                          raw                      iinnooppttss(3NCURSES)
+                                                          redrawwin                rreeffrreesshh(3NCURSES)
+                                                          refresh                  rreeffrreesshh(3NCURSES)
+                                                          reset_prog_mode          kkeerrnneell(3NCURSES)
+                                                          reset_shell_mode         kkeerrnneell(3NCURSES)
+                                                          resetty                  kkeerrnneell(3NCURSES)
+                                                          resize_term              rreessiizzeetteerrmm(3NCURSES)*
+                                                          resizeterm               rreessiizzeetteerrmm(3NCURSES)*
+                                                          restartterm              tteerrmmiinnffoo(3NCURSES)
+                                                          ripoffline               kkeerrnneell(3NCURSES)
+                                                          savetty                  kkeerrnneell(3NCURSES)
+                                                          scanw                    ssccaannww(3NCURSES)
+                                                          scr_dump                 ssccrr__dduummpp(3NCURSES)
+                                                          scr_init                 ssccrr__dduummpp(3NCURSES)
+                                                          scr_restore              ssccrr__dduummpp(3NCURSES)
+                                                          scr_set                  ssccrr__dduummpp(3NCURSES)
+                                                          scrl                     ssccrroollll(3NCURSES)
+                                                          scroll                   ssccrroollll(3NCURSES)
+                                                          scrollok                 oouuttooppttss(3NCURSES)
+                                                          set_curterm              tteerrmmiinnffoo(3NCURSES)
+                                                          set_term                 iinniittssccrr(3NCURSES)
+                                                          setcchar                 ggeettcccchhaarr(3NCURSES)
+                                                          setscrreg                oouuttooppttss(3NCURSES)
+                                                          setsyx                   kkeerrnneell(3NCURSES)
+                                                          setterm                  tteerrmmiinnffoo(3NCURSES)
+                                                          setupterm                tteerrmmiinnffoo(3NCURSES)
+                                                          slk_attr                 ssllkk(3NCURSES)*
+                                                          slk_attr_off             ssllkk(3NCURSES)
+                                                          slk_attr_on              ssllkk(3NCURSES)
+                                                          slk_attr_set             ssllkk(3NCURSES)
+                                                          slk_attroff              ssllkk(3NCURSES)
+                                                          slk_attron               ssllkk(3NCURSES)
+                                                          slk_attrset              ssllkk(3NCURSES)
+                                                          slk_clear                ssllkk(3NCURSES)
+
+                                                          slk_color                ssllkk(3NCURSES)
+                                                          slk_init                 ssllkk(3NCURSES)
+                                                          slk_label                ssllkk(3NCURSES)
+                                                          slk_noutrefresh          ssllkk(3NCURSES)
+                                                          slk_refresh              ssllkk(3NCURSES)
+                                                          slk_restore              ssllkk(3NCURSES)
+                                                          slk_set                  ssllkk(3NCURSES)
+                                                          slk_touch                ssllkk(3NCURSES)
+                                                          standend                 aattttrr(3NCURSES)
+                                                          standout                 aattttrr(3NCURSES)
+                                                          start_color              ccoolloorr(3NCURSES)
+                                                          subpad                   ppaadd(3NCURSES)
+                                                          subwin                   wwiinnddooww(3NCURSES)
+                                                          syncok                   wwiinnddooww(3NCURSES)
+                                                          term_attrs               tteerrmmaattttrrss(3NCURSES)
+                                                          termattrs                tteerrmmaattttrrss(3NCURSES)
+                                                          termname                 tteerrmmaattttrrss(3NCURSES)
+                                                          tgetent                  tteerrmmccaapp(3NCURSES)
+                                                          tgetflag                 tteerrmmccaapp(3NCURSES)
+                                                          tgetnum                  tteerrmmccaapp(3NCURSES)
+                                                          tgetstr                  tteerrmmccaapp(3NCURSES)
+                                                          tgoto                    tteerrmmccaapp(3NCURSES)
+                                                          tigetflag                tteerrmmiinnffoo(3NCURSES)
+                                                          tigetnum                 tteerrmmiinnffoo(3NCURSES)
+                                                          tigetstr                 tteerrmmiinnffoo(3NCURSES)
+                                                          timeout                  iinnooppttss(3NCURSES)
+                                                          tiparm                   tteerrmmiinnffoo(3NCURSES)*
+                                                          touchline                ttoouucchh(3NCURSES)
+                                                          touchwin                 ttoouucchh(3NCURSES)
+                                                          tparm                    tteerrmmiinnffoo(3NCURSES)
+                                                          tputs                    tteerrmmccaapp(3NCURSES)
+                                                          tputs                    tteerrmmiinnffoo(3NCURSES)
+                                                          trace                    ttrraaccee(3NCURSES)*
+                                                          typeahead                iinnooppttss(3NCURSES)
+                                                          unctrl                   uuttiill(3NCURSES)
+                                                          unget_wch                ggeett__wwcchh(3NCURSES)
+                                                          ungetch                  ggeettcchh(3NCURSES)
+                                                          ungetmouse               mmoouussee(3NCURSES)*
+                                                          untouchwin               ttoouucchh(3NCURSES)
+                                                          use_default_colors       ddeeffaauulltt__ccoolloorrss(3NCURSES)*
+                                                          use_env                  uuttiill(3NCURSES)
+                                                          use_extended_names       eexxtteennssiioonnss(3NCURSES)*
+                                                          use_legacy_coding        lleeggaaccyy__ccooddiinngg(3NCURSES)*
+                                                          use_tioctl               uuttiill(3NCURSES)
+                                                          vid_attr                 tteerrmmiinnffoo(3NCURSES)
+                                                          vid_puts                 tteerrmmiinnffoo(3NCURSES)
+                                                          vidattr                  tteerrmmiinnffoo(3NCURSES)
+                                                          vidputs                  tteerrmmiinnffoo(3NCURSES)
+                                                          vline                    bboorrddeerr(3NCURSES)
+                                                          vline_set                bboorrddeerr__sseett(3NCURSES)
+                                                          vw_printw                pprriinnttww(3NCURSES)
+                                                          vw_scanw                 ssccaannww(3NCURSES)
+                                                          vwprintw                 pprriinnttww(3NCURSES)
+                                                          vwscanw                  ssccaannww(3NCURSES)
+                                                          wadd_wch                 aadddd__wwcchh(3NCURSES)
+                                                          wadd_wchnstr             aadddd__wwcchhssttrr(3NCURSES)
+                                                          wadd_wchstr              aadddd__wwcchhssttrr(3NCURSES)
+                                                          waddch                   aaddddcchh(3NCURSES)
+                                                          waddchnstr               aaddddcchhssttrr(3NCURSES)
+                                                          waddchstr                aaddddcchhssttrr(3NCURSES)
+                                                          waddnstr                 aaddddssttrr(3NCURSES)
+                                                          waddnwstr                aaddddwwssttrr(3NCURSES)
+                                                          waddstr                  aaddddssttrr(3NCURSES)
+                                                          waddwstr                 aaddddwwssttrr(3NCURSES)
+                                                          wattr_get                aattttrr(3NCURSES)
+                                                          wattr_off                aattttrr(3NCURSES)
+                                                          wattr_on                 aattttrr(3NCURSES)
+
+                                                          wattr_set                aattttrr(3NCURSES)
+                                                          wattroff                 aattttrr(3NCURSES)
+                                                          wattron                  aattttrr(3NCURSES)
+                                                          wattrset                 aattttrr(3NCURSES)
+                                                          wbkgd                    bbkkggdd(3NCURSES)
+                                                          wbkgdset                 bbkkggdd(3NCURSES)
+                                                          wbkgrnd                  bbkkggrrnndd(3NCURSES)
+                                                          wbkgrndset               bbkkggrrnndd(3NCURSES)
+                                                          wborder                  bboorrddeerr(3NCURSES)
+                                                          wborder_set              bboorrddeerr__sseett(3NCURSES)
+                                                          wchgat                   aattttrr(3NCURSES)
+                                                          wclear                   cclleeaarr(3NCURSES)
+                                                          wclrtobot                cclleeaarr(3NCURSES)
+                                                          wclrtoeol                cclleeaarr(3NCURSES)
+                                                          wcolor_set               aattttrr(3NCURSES)
+                                                          wcursyncup               wwiinnddooww(3NCURSES)
+                                                          wdelch                   ddeellcchh(3NCURSES)
+                                                          wdeleteln                ddeelleetteellnn(3NCURSES)
+                                                          wecho_wchar              aadddd__wwcchh(3NCURSES)
+                                                          wechochar                aaddddcchh(3NCURSES)
+                                                          wenclose                 mmoouussee(3NCURSES)*
+                                                          werase                   cclleeaarr(3NCURSES)
+                                                          wget_wch                 ggeett__wwcchh(3NCURSES)
+                                                          wget_wstr                ggeett__wwssttrr(3NCURSES)
+                                                          wgetbkgrnd               bbkkggrrnndd(3NCURSES)
+                                                          wgetch                   ggeettcchh(3NCURSES)
+                                                          wgetdelay                ooppaaqquuee(3NCURSES)*
+                                                          wgetn_wstr               ggeett__wwssttrr(3NCURSES)
+                                                          wgetnstr                 ggeettssttrr(3NCURSES)
+                                                          wgetparent               ooppaaqquuee(3NCURSES)*
+                                                          wgetscrreg               ooppaaqquuee(3NCURSES)*
+                                                          wgetstr                  ggeettssttrr(3NCURSES)
+                                                          whline                   bboorrddeerr(3NCURSES)
+                                                          whline_set               bboorrddeerr__sseett(3NCURSES)
+                                                          win_wch                  iinn__wwcchh(3NCURSES)
+                                                          win_wchnstr              iinn__wwcchhssttrr(3NCURSES)
+                                                          win_wchstr               iinn__wwcchhssttrr(3NCURSES)
+                                                          winch                    iinncchh(3NCURSES)
+                                                          winchnstr                iinncchhssttrr(3NCURSES)
+                                                          winchstr                 iinncchhssttrr(3NCURSES)
+                                                          winnstr                  iinnssttrr(3NCURSES)
+                                                          winnwstr                 iinnwwssttrr(3NCURSES)
+                                                          wins_nwstr               iinnss__wwssttrr(3NCURSES)
+                                                          wins_wch                 iinnss__wwcchh(3NCURSES)
+                                                          wins_wstr                iinnss__wwssttrr(3NCURSES)
+                                                          winsch                   iinnsscchh(3NCURSES)
+                                                          winsdelln                ddeelleetteellnn(3NCURSES)
+                                                          winsertln                ddeelleetteellnn(3NCURSES)
+                                                          winsnstr                 iinnssssttrr(3NCURSES)
+                                                          winsstr                  iinnssssttrr(3NCURSES)
+                                                          winstr                   iinnssttrr(3NCURSES)
+                                                          winwstr                  iinnwwssttrr(3NCURSES)
+                                                          wmouse_trafo             mmoouussee(3NCURSES)*
+                                                          wmove                    mmoovvee(3NCURSES)
+                                                          wnoutrefresh             rreeffrreesshh(3NCURSES)
+                                                          wprintw                  pprriinnttww(3NCURSES)
+                                                          wredrawln                rreeffrreesshh(3NCURSES)
+                                                          wrefresh                 rreeffrreesshh(3NCURSES)
+                                                          wresize                  wwrreessiizzee(3NCURSES)*
+                                                          wscanw                   ssccaannww(3NCURSES)
+                                                          wscrl                    ssccrroollll(3NCURSES)
+                                                          wsetscrreg               oouuttooppttss(3NCURSES)
+                                                          wstandend                aattttrr(3NCURSES)
+                                                          wstandout                aattttrr(3NCURSES)
+                                                          wsyncdown                wwiinnddooww(3NCURSES)
+                                                          wsyncup                  wwiinnddooww(3NCURSES)
+                                                          wtimeout                 iinnooppttss(3NCURSES)
+
+                                                          wtouchln                 ttoouucchh(3NCURSES)
+                                                          wunctrl                  uuttiill(3NCURSES)
+                                                          wvline                   bboorrddeerr(3NCURSES)
+                                                          wvline_set               bboorrddeerr__sseett(3NCURSES)
+
+RREETTUURRNN VVAALLUUEE
+       Routines  that  return  an  integer return EERRRR upon failure and an integer value other than EERRRR upon successful completion, unless otherwise noted in the
+       routine descriptions.
+
+       As a general rule, routines check for null pointers passed as parameters, and handle this as an error.
+
+       All macros return the value of the ww version, except sseettssccrrrreegg, wwsseettssccrrrreegg, ggeettyyxx, ggeettbbeeggyyxx, and ggeettmmaaxxyyxx.  The return values of  sseettssccrrrreegg,  wwsseettssccrrrreegg,
+       ggeettyyxx, ggeettbbeeggyyxx, and ggeettmmaaxxyyxx are undefined (i.e., these should not be used as the right-hand side of assignment statements).
+
+       Routines that return pointers return NNUULLLL on error.
+
+EENNVVIIRROONNMMEENNTT
+       The following environment symbols are useful for customizing the runtime behavior of the nnccuurrsseess library.  The most important ones have been already dis‐
+       cussed in detail.
+
+   CCCC ccoommmmaanndd--cchhaarraacctteerr
+       When set, change occurrences of the command_character (i.e., the ccmmddcchh capability) of the loaded terminfo entries to the value of  this  variable.   Very
+       few terminfo entries provide this feature.
+
+       Because  this  name  is also used in development environments to represent the C compiler's name, nnccuurrsseess ignores it if it does not happen to be a single
+       character.
+
+   BBAAUUDDRRAATTEE
+       The debugging library checks this environment variable when the application has redirected output to a file.  The variable's numeric value  is  used  for
+       the  baudrate.  If no value is found, nnccuurrsseess uses 9600.  This allows testers to construct repeatable test-cases that take into account costs that depend
+       on baudrate.
+
+   CCOOLLUUMMNNSS
+       Specify the width of the screen in characters.  Applications running in a windowing environment usually are able to obtain the width  of  the  window  in
+       which  they are executing.  If neither the CCOOLLUUMMNNSS value nor the terminal's screen size is available, nnccuurrsseess uses the size which may be specified in the
+       terminfo database (i.e., the ccoollss capability).
+
+       It is important that your application use a correct size for the screen.  This is not always possible because your application may be running on  a  host
+       which  does  not  honor  NAWS  (Negotiations About Window Size), or because you are temporarily running as another user.  However, setting CCOOLLUUMMNNSS and/or
+       LLIINNEESS overrides the library's use of the screen size obtained from the operating system.
+
+       Either CCOOLLUUMMNNSS or LLIINNEESS symbols may be specified independently.  This is mainly useful to circumvent legacy misfeatures of terminal  descriptions,  e.g.,
+       xterm  which commonly specifies a 65 line screen.  For best results, lliinneess and ccoollss should not be specified in a terminal description for terminals which
+       are run as emulations.
+
+       Use the uussee__eennvv function to disable all use of external environment (but not including system calls) to determine the screen size.   Use  the  uussee__ttiiooccttll
+       function to update CCOOLLUUMMNNSS or LLIINNEESS to match the screen size obtained from system calls or the terminal database.
+
+   EESSCCDDEELLAAYY
+       Specifies  the  total  time, in milliseconds, for which ncurses will await a character sequence, e.g., a function key.  The default value, 1000 millisec‐
+       onds, is enough for most uses.  However, it is made a variable to accommodate unusual applications.
+
+       The most common instance where you may wish to change this value is to work with slow hosts, e.g., running on a network.  If the host cannot read charac‐
+       ters rapidly enough, it will have the same effect as if the terminal did not send characters rapidly enough.  The library will still see a timeout.
+
+       Note  that  xterm  mouse events are built up from character sequences received from the xterm.  If your application makes heavy use of multiple-clicking,
+       you may wish to lengthen this default value because the timeout applies to the composed multi-click event as well as the individual clicks.
+
+       In addition to the environment variable, this implementation provides a global variable with the same name.  Portable applications should not  rely  upon
+       the  presence of ESCDELAY in either form, but setting the environment variable rather than the global variable does not create problems when compiling an
+       application.
+
+   HHOOMMEE
+       Tells nnccuurrsseess where your home directory is.  That is where it may read and write auxiliary terminal descriptions:
+
+           $HOME/.termcap
+           $HOME/.terminfo
+
+   LLIINNEESS
+       Like COLUMNS, specify the height of the screen in characters.  See COLUMNS for a detailed description.
+
+   MMOOUUSSEE__BBUUTTTTOONNSS__112233
+       This applies only to the OS/2 EMX port.  It specifies the order of buttons on the mouse.  OS/2 numbers a 3-button mouse inconsistently from  other  plat‐
+       forms:
+
+           1 = left
+           2 = right
+           3 = middle.
+
+       This  variable  lets  you  customize  the  mouse.  The variable must be three numeric digits 1-3 in any order, e.g., 123 or 321.  If it is not specified,
+       nnccuurrsseess uses 132.
+
+   NNCCUURRSSEESS__AASSSSUUMMEEDD__CCOOLLOORRSS
+       Override the compiled-in assumption that the terminal's default colors are white-on-black (see ddeeffaauulltt__ccoolloorrss(3NCURSES)).  You may set the foreground and
+       background  color  values  with this environment variable by proving a 2-element list: foreground,background.  For example, to tell ncurses to not assume
+       anything about the colors, set this to "-1,-1".  To make it green-on-black, set it to "2,0".  Any positive value from zero  to  the  terminfo  mmaaxx__ccoolloorrss
+       value is allowed.
+
+   NNCCUURRSSEESS__CCOONNSSOOLLEE22
+       This applies only to the MinGW port of ncurses.
+
+       The  CCoonnssoollee22  program's handling of the Microsoft Console API call CCrreeaatteeCCoonnssoolleeSSccrreeeennBBuuffffeerr is defective.  Applications which use this will hang.  How‐
+       ever, it is possible to simulate the action of this call by mapping coordinates, explicitly saving and restoring the original screen  contents.   Setting
+       the environment variable NNCCGGDDBB has the same effect.
+
+   NNCCUURRSSEESS__GGPPMM__TTEERRMMSS
+       This applies only to ncurses configured to use the GPM interface.
+
+       If  present,  the  environment variable is a list of one or more terminal names against which the TTEERRMM environment variable is matched.  Setting it to an
+       empty value disables the GPM interface; using the built-in support for xterm, etc.
+
+       If the environment variable is absent, ncurses will attempt to open GPM if TTEERRMM contains "linux".
+
+   NNCCUURRSSEESS__NNOO__HHAARRDD__TTAABBSS
+       NNccuurrsseess may use tabs as part of the cursor movement optimization.  In some cases, your terminal driver may not handle these properly.  Set this  environ‐
+       ment variable to disable the feature.  You can also adjust your ssttttyy settings to avoid the problem.
+
+   NNCCUURRSSEESS__NNOO__MMAAGGIICC__CCOOOOKKIIEE
+       Some terminals use a magic-cookie feature which requires special handling to make highlighting and other video attributes display properly.  You can sup‐
+       press the highlighting entirely for these terminals by setting this environment variable.
+
+   NNCCUURRSSEESS__NNOO__PPAADDDDIINNGG
+       Most of the terminal descriptions in the terminfo database are written for real "hardware" terminals.  Many people use terminal emulators which run in  a
+       windowing  environment and use curses-based applications.  Terminal emulators can duplicate all of the important aspects of a hardware terminal, but they
+       do not have the same limitations.  The chief limitation of a hardware terminal from the standpoint of your application is  the  management  of  dataflow,
+       i.e.,  timing.   Unless  a  hardware  terminal is interfaced into a terminal concentrator (which does flow control), it (or your application) must manage
+       dataflow, preventing overruns.  The cheapest solution (no hardware cost) is for your program to do this by pausing after  operations  that  the  terminal
+       does slowly, such as clearing the display.
+
+       As a result, many terminal descriptions (including the vt100) have delay times embedded.  You may wish to use these descriptions, but not want to pay the
+       performance penalty.
+
+       Set the NCURSES_NO_PADDING environment variable to disable all but mandatory padding.  Mandatory padding is used as a part of special  control  sequences
+       such as _f_l_a_s_h.
+
+   NNCCUURRSSEESS__NNOO__SSEETTBBUUFF
+       This setting is obsolete.  Before changes
+
+          ·   started with 5.9 patch 20120825 and
+
+          ·   continued though 5.9 patch 20130126
+
+       nnccuurrsseess  enabled  buffered output during terminal initialization.  This was done (as in SVr4 curses) for performance reasons.  For testing purposes, both
+       of nnccuurrsseess and certain applications, this feature was made optional.  Setting the NCURSES_NO_SETBUF variable disabled output buffering, leaving the  out‐
+       put in the original (usually line buffered) mode.
+
+       In the current implementation, ncurses performs its own buffering and does not require this workaround.  It does not modify the buffering of the standard
+       output.
+
+       The reason for the change was to make the behavior for interrupts and other signals more robust.  One drawback is that certain  nonconventional  programs
+       would mix ordinary stdio calls with ncurses calls and (usually) work.  This is no longer possible since ncurses is not using the buffered standard output
+       but its own output (to the same file descriptor).  As a special case, the low-level calls such as ppuuttpp still use the  standard  output.   But  high-level
+       curses calls do not.
+
+   NNCCUURRSSEESS__NNOO__UUTTFF88__AACCSS
+       During initialization, the nnccuurrsseess library checks for special cases where VT100 line-drawing (and the corresponding alternate character set capabilities)
+       described in the terminfo are known to be missing.  Specifically, when running in a UTF-8 locale, the Linux console emulator and the GNU  screen  program
+       ignore  these.   Ncurses  checks the TTEERRMM environment variable for these.  For other special cases, you should set this environment variable.  Doing this
+       tells ncurses to use Unicode values which correspond to the VT100 line-drawing glyphs.  That works for the special cases cited, and is likely to work for
+       terminal emulators.
+
+       When  setting  this  variable,  you  should set it to a nonzero value.  Setting it to zero (or to a nonnumber) disables the special check for "linux" and
+       "screen".
+
+       As an alternative to the environment variable, ncurses checks for an extended terminfo capability UU88.  This is a numeric capability which can be compiled
+       using ttiicc --xx.  For example
+
+          # linux console, if patched to provide working
+          # VT100 shift-in/shift-out, with corresponding font.
+          linux-vt100|linux console with VT100 line-graphics,
+                  U8#0, use=linux,
+
+          # uxterm with vt100Graphics resource set to false
+          xterm-utf8|xterm relying on UTF-8 line-graphics,
+                  U8#1, use=xterm,
+
+       The name "U8" is chosen to be two characters, to permit it to be used by applications that use ncurses' termcap interface.
+
+   NNCCUURRSSEESS__TTRRAACCEE
+       During  initialization, the nnccuurrsseess debugging library checks the NCURSES_TRACE environment variable.  If it is defined, to a numeric value, nnccuurrsseess calls
+       the ttrraaccee function, using that value as the argument.
+
+       The argument values, which are defined in ccuurrsseess..hh, provide several types of information.  When running with traces enabled, your application will  write
+       the file ttrraaccee to the current directory.
+
+       See ccuurrss__ttrraaccee(3X) for more information.
+
+   TTEERRMM
+       Denotes your terminal type.  Each terminal type is distinct, though many are similar.
+
+       TTEERRMM  is  commonly  set  by  terminal emulators to help applications find a workable terminal description.  Some of those choose a popular approximation,
+       e.g., “ansi”, “vt100”, “xterm” rather than an exact fit.  Not infrequently, your application will have problems with that approach, e.g., incorrect func‐
+       tion-key definitions.
+
+       If  you  set  TTEERRMM in your environment, it has no effect on the operation of the terminal emulator.  It only affects the way applications work within the
+       terminal.  Likewise, as a general rule (xxtteerrmm being a rare exception), terminal emulators which allow you to specify TTEERRMM as a parameter or configuration
+       value do not change their behavior to match that setting.
+
+   TTEERRMMCCAAPP
+       If  the  nnccuurrsseess library has been configured with _t_e_r_m_c_a_p support, nnccuurrsseess will check for a terminal's description in termcap form if it is not available
+       in the terminfo database.
+
+       The TTEERRMMCCAAPP environment variable contains either a terminal description (with newlines stripped out), or  a  file  name  telling  where  the  information
+       denoted  by  the  TTEERRMM  environment  variable  exists.   In either case, setting it directs nnccuurrsseess to ignore the usual place for this information, e.g.,
+       /etc/termcap.
+
+   TTEERRMMIINNFFOO
+       nnccuurrsseess can be configured to read from multiple terminal databases.  The TTEERRMMIINNFFOO variable overrides the location  for  the  default  terminal  database.
+       Terminal descriptions (in terminal format) are stored in terminal databases:
+
+       ·   Normally these are stored in a directory tree, using subdirectories named by the first letter of the terminal names therein.
+
+           This  is  the  scheme  used  in System V, which legacy Unix systems use, and the TTEERRMMIINNFFOO variable is used by _c_u_r_s_e_s applications on those systems to
+           override the default location of the terminal database.
+
+       ·   If nnccuurrsseess is built to use hashed databases, then each entry in this list may be the path of a hashed database file, e.g.,
+
+               /usr/share/terminfo.db
+
+           rather than
+
+               /usr/share/terminfo/
+
+           The hashed database uses less disk-space and is a little faster than the directory tree.  However, some applications  assume  the  existence  of  the
+           directory tree, reading it directly rather than using the terminfo library calls.
+
+       ·   If nnccuurrsseess is built with a support for reading termcap files directly, then an entry in this list may be the path of a termcap file.
+
+       ·   If  the  TTEERRMMIINNFFOO  variable  begins with “hex:” or “b64:”, nnccuurrsseess uses the remainder of that variable as a compiled terminal description.  You might
+           produce the base64 format using iinnffooccmmpp(1M):
+
+               TERMINFO="$(infocmp -0 -Q2 -q)"
+               export TERMINFO
+
+           The compiled description is used if it corresponds to the terminal identified by the TTEERRMM variable.
+
+       Setting TTEERRMMIINNFFOO is the simplest, but not the only way to set location of the default terminal database.  The complete  list  of  database  locations  in
+       order follows:
+
+          ·   the last terminal database to which nnccuurrsseess wrote, if any, is searched first
+
+          ·   the location specified by the TERMINFO environment variable
+
+          ·   $HOME/.terminfo
+
+          ·   locations listed in the TERMINFO_DIRS environment variable
+
+          ·   one or more locations whose names are configured and compiled into the ncurses library, i.e.,
+
+             ·   no default value (corresponding to the TERMINFO_DIRS variable)
+
+             ·   /etc/terminfo (corresponding to the TERMINFO variable)
+
+   TTEERRMMIINNFFOO__DDIIRRSS
+       Specifies  a  list of locations to search for terminal descriptions.  Each location in the list is a terminal database as described in the section on the
+       TTEERRMMIINNFFOO variable.  The list is separated by colons (i.e., ":") on Unix, semicolons on OS/2 EMX.
+
+       There is no corresponding feature in System V terminfo; it is an extension developed for nnccuurrsseess.
+
+   TTEERRMMPPAATTHH
+       If TTEERRMMCCAAPP does not hold a file name then nnccuurrsseess checks the TTEERRMMPPAATTHH environment variable.  This is a list of filenames separated by  spaces  or  colons
+       (i.e., ":") on Unix, semicolons on OS/2 EMX.
+
+       If the TTEERRMMPPAATTHH environment variable is not set, nnccuurrsseess looks in the files
+
+           /etc/termcap, /usr/share/misc/termcap and $HOME/.termcap,
+
+       in that order.
+
+       The  library  may  be configured to disregard the following variables when the current user is the superuser (root), or if the application uses setuid or
+       setgid permissions:
+
+           $TERMINFO, $TERMINFO_DIRS, $TERMPATH, as well as $HOME.
+
+AALLTTEERRNNAATTEE CCOONNFFIIGGUURRAATTIIOONNSS
+       Several different configurations are possible, depending on the configure script options used when building nnccuurrsseess.  There are a few main options  whose
+       effects are visible to the applications developer using nnccuurrsseess:
+
+       --disable-overwrite
+            The standard include for nnccuurrsseess is as noted in SSYYNNOOPPSSIISS:
+
+                ##iinncclluuddee <<ccuurrsseess..hh>>
+
+            This option is used to avoid filename conflicts when nnccuurrsseess is not the main implementation of curses of the computer.  If nnccuurrsseess is installed dis‐
+            abling overwrite, it puts its headers in a subdirectory, e.g.,
+
+                ##iinncclluuddee <<nnccuurrsseess//ccuurrsseess..hh>>
+
+            It also omits a symbolic link which would allow you to use --llccuurrsseess to build executables.
+
+       --enable-widec
+            The configure script renames the library and (if the ----ddiissaabbllee--oovveerrwwrriittee option is used) puts the header files in a different subdirectory.  All  of
+            the library names have a "w" appended to them, i.e., instead of
+
+                --llnnccuurrsseess
+
+            you link with
+
+                --llnnccuurrsseessww
+
+            You  must  also  define  __XXOOPPEENN__SSOOUURRCCEE__EEXXTTEENNDDEEDD  when  compiling for the wide-character library to use the extended (wide-character) functions.  The
+            ccuurrsseess..hh file which is installed for the wide-character library is designed to be compatible with the normal library's header.  Only the size of the
+            WWIINNDDOOWW  structure  differs,  and very few applications require more than a pointer to WWIINNDDOOWWs.  If the headers are installed allowing overwrite, the
+            wide-character library's headers should be installed last, to allow applications to be built using either library from the same set of headers.
+
+       --with-pthread
+            The configure script renames the library.  All of the library names have a "t" appended to them (before any "w" added by ----eennaabbllee--wwiiddeecc).
+
+            The global variables such as LLIINNEESS are replaced by macros to allow read-only access.  At the same time, setter-functions are provided to  set  these
+            values.  Some applications (very few) may require changes to work with this convention.
+
+       --with-shared
+
+       --with-normal
+
+       --with-debug
+
+       --with-profile
+            The  shared and normal (static) library names differ by their suffixes, e.g., lliibbnnccuurrsseess..ssoo and lliibbnnccuurrsseess..aa.  The debug and profiling libraries add
+            a "_g" and a "_p" to the root names respectively, e.g., lliibbnnccuurrsseess__gg..aa and lliibbnnccuurrsseess__pp..aa.
+
+       --with-trace
+            The ttrraaccee function normally resides in the debug library, but it is sometimes useful to configure this in the  shared  library.   Configure  scripts
+            should check for the function's existence rather than assuming it is always in the debug library.
+
+FFIILLEESS
+       /usr/share/tabset
+            directory containing initialization files for the terminal capability database /etc/terminfo terminal capability database
+
+SSEEEE AALLSSOO
+       tteerrmmiinnffoo(5) and related pages whose names begin "curs_" for detailed routine descriptions.
+       ccuurrsseess__vvaarriiaabblleess(3NCURSES)
+       uusseerr__ccaappss(5) for user-defined capabilities
+
+EEXXTTEENNSSIIOONNSS
+       The  nnccuurrsseess  library  can be compiled with an option (--DDUUSSEE__GGEETTCCAAPP) that falls back to the old-style /etc/termcap file if the terminal setup code cannot
+       find a terminfo entry corresponding to TTEERRMM.  Use of this feature is not recommended, as it essentially  includes  an  entire  termcap  compiler  in  the
+       nnccuurrsseess startup code, at significant cost in core and startup cycles.
+
+       The  nnccuurrsseess  library  includes  facilities  for  capturing mouse events on certain terminals (including xterm).  See the mmoouussee(3NCURSES) manual page for
+       details.
+
+       The nnccuurrsseess library includes facilities for responding to window resizing events, e.g., when running in an xterm.  See the rreessiizzeetteerrmm(3NCURSES) and  wwrree‐‐
+       ssiizzee(3NCURSES) manual pages for details.  In addition, the library may be configured with a SSIIGGWWIINNCCHH handler.
+
+       The  nnccuurrsseess  library  extends  the  fixed  set  of  function key capabilities of terminals by allowing the application designer to define additional key
+       sequences at runtime.  See the ddeeffiinnee__kkeeyy(3NCURSES) kkeeyy__ddeeffiinneedd(3NCURSES), and kkeeyyookk(3NCURSES) manual pages for details.
+
+       The nnccuurrsseess library can exploit the capabilities of terminals which implement the ISO-6429 SGR 39 and SGR 49 controls,  which  allow  an  application  to
+       reset  the  terminal  to  its  original foreground and background colors.  From the users' perspective, the application is able to draw colored text on a
+       background whose color is set independently, providing better control over color contrasts.  See the ddeeffaauulltt__ccoolloorrss(3NCURSES) manual page for details.
+
+       The nnccuurrsseess library includes a function for directing application output to a printer attached to the terminal device.  See  the  pprriinntt(3NCURSES)  manual
+       page for details.
+
+PPOORRTTAABBIILLIITTYY
+       The  nnccuurrsseess  library  is  intended to be BASE-level conformant with XSI Curses.  The EXTENDED XSI Curses functionality (including color support) is sup‐
+       ported.
+
+       A small number of local differences (that is, individual differences between the XSI Curses and nnccuurrsseess calls) are described in PPOORRTTAABBIILLIITTYY  sections  of
+       the library man pages.
+
+       Unlike  other implementations, this one checks parameters such as pointers to WINDOW structures to ensure they are not null.  The main reason for provid‐
+       ing this behavior is to guard against programmer error.  The standard interface does not provide a way for the library to tell an  application  which  of
+       several possible errors were detected.  Relying on this (or some other) extension will adversely affect the portability of curses applications.
+
+       This implementation also contains several extensions:
+
+       ·   The routine hhaass__kkeeyy is not part of XPG4, nor is it present in SVr4.  See the ggeettcchh(3NCURSES) manual page for details.
+
+       ·   The routine ssllkk__aattttrr is not part of XPG4, nor is it present in SVr4.  See the ssllkk(3NCURSES) manual page for details.
+
+       ·   The routines ggeettmmoouussee, mmoouusseemmaasskk, uunnggeettmmoouussee, mmoouusseeiinntteerrvvaall, and wweenncclloossee relating to mouse interfacing are not part of XPG4, nor are they present in
+           SVr4.  See the mmoouussee(3NCURSES) manual page for details.
+
+       ·   The routine mmccpprriinntt was not present in any previous curses implementation.  See the pprriinntt(3NCURSES) manual page for details.
+
+       ·   The routine wwrreessiizzee is not part of XPG4, nor is it present in SVr4.  See the wwrreessiizzee(3NCURSES) manual page for details.
+
+       ·   The WINDOW structure's internal details can be hidden from application programs.  See ooppaaqquuee(3NCURSES) for the discussion of iiss__ssccrroollllookk, etc.
+
+       ·   This implementation can be configured to provide rudimentary support for multi-threaded applications.  See tthhrreeaaddss(3NCURSES) for details.
+
+       ·   This implementation can  also  be  configured  to  provide  a  set  of  functions  which  improve  the  ability  to  manage  multiple  screens.   See
+           sspp__ffuunnccss(3NCURSES) for details.
+
+       In historic curses versions, delays embedded in the capabilities ccrr, iinndd, ccuubb11, ffff and ttaabb activated corresponding delay bits in the UNIX tty driver.  In
+       this implementation, all padding is done by sending NUL bytes.  This method is slightly more expensive, but narrows the interface to the UNIX kernel sig‐
+       nificantly and increases the package's portability correspondingly.
+
+NNOOTTEESS
+       The header file <<ccuurrsseess..hh>> automatically includes the header files <<ssttddiioo..hh>> and <<uunnccttrrll..hh>>.
+
+       If standard output from a nnccuurrsseess program is re-directed to something which is not a tty, screen updates will be directed to standard error.  This was an
+       undocumented feature of AT&T System V Release 3 curses.
+
+AAUUTTHHOORRSS
+       Zeyd M. Ben-Halim, Eric S. Raymond, Thomas E. Dickey.  Based on pcurses by Pavel Curtis.
+
+                                                                                                                                               ncurses(3NCURSES)
