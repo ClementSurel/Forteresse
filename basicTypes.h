@@ -10,10 +10,14 @@ typedef struct
 } Position;
 
 
-typedef enum {NOTHING, MONEY, WALL, HOME, PERSO} Item;
+typedef enum {NOTHING, INEXPLORED, MONEY, WALL, HOME, PERSO} Item;
 
-typedef struct
+typedef struct Case
 {
+	// explored
+	int explored;
+
+	// Item
 	Item item;
 	int targeted;
 	int distance;

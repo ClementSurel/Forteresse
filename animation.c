@@ -18,13 +18,17 @@ void printGame (GameElements* gElts)
 	{
 		for (j = 0; j < MAP_HEIGHT; j++)
 		{
-			gMapCpy[i][j] = gElts->ngMap[i][j]->item;
+			//if (gElts->gMap[i][j]->explored)
+				gMapCpy[i][j] = gElts->gMap[i][j]->item;
+//			else
+//				gMapCpy[i][j] = INEXPLORED;
 		}
 	}
 	// Put the personages in the map copy
 	for (i = 0; i < gElts->nb_perso; i++)
 	{
 		gMapCpy[gElts->list_perso[i].pos.x][gElts->list_perso[i].pos.y] = PERSO;
+		gElts->gMap[gElts->list_perso[i].pos.x][gElts->list_perso[i].pos.y]->explored = 1;
 	}
 	gMapCpy[gElts->home.x][gElts->home.y] = HOME;
 
@@ -40,7 +44,7 @@ void printGame (GameElements* gElts)
 	printw("\n");
 
 	// PRINT THE MAP
-	for (i = 0; i < MAP_WIDTH+2; i++)
+	for (i = 0; i < 2*MAP_WIDTH+2; i++)
 		printw("-");
 	printw("\n");
 
@@ -51,36 +55,38 @@ void printGame (GameElements* gElts)
 		{
 			switch (gMapCpy[i][j])
 			{
+				case INEXPLORED:
+					break;
 				case WALL:
 					attron(COLOR_PAIR(1));
-					printw("#");
+					printw("# ");
 					attroff(COLOR_PAIR(1));
 					break;					
 				case MONEY:
 					// Switch the color pair 1 ON
 					attron(COLOR_PAIR(2));
-					printw("$");
+					printw("$ ");
 					// Switch the color pair 1 OFF
 					attroff(COLOR_PAIR(2));
 					break;
 				case PERSO:
 					attron(COLOR_PAIR(3));
-					printw("*");
+					printw("* ");
 					attroff(COLOR_PAIR(3));
 					break;
 				case NOTHING:
 					attron(COLOR_PAIR(4));
-					printw(" ", gMapCpy[i][j]);
+					printw("  ", gMapCpy[i][j]);
 					attroff(COLOR_PAIR(4));
 					break;
 				case HOME:
 					attron(COLOR_PAIR(1));
-					printw("^");
+					printw("^ ");
 					attroff(COLOR_PAIR(1));
 					break;
 				default:
 					attron(COLOR_PAIR(1));
-					printw(" ");
+					printw("  ");
 					attroff(COLOR_PAIR(1));
 					break;
 			}
@@ -88,7 +94,7 @@ void printGame (GameElements* gElts)
 		printw("|\n");
 	}
 
-	for (i = 0; i < MAP_WIDTH+2; i++)
+	for (i = 0; i < 2*MAP_WIDTH+2; i++)
 		printw("-");
 	printw("\n\n");
 

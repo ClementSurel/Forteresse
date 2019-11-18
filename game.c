@@ -26,75 +26,41 @@ int initGameElements (GameElements* gElts)
 	{
 		for (j = 0; j < MAP_HEIGHT; j++)
 		{
-			gElts->gMap[i][j] = ' ';
-		}
-	}
-
-	for (i = 0; i < MAP_WIDTH; i++)
-	{
-		for (j = 0; j < MAP_HEIGHT; j++)
-		{
-			gElts->ngMap[i][j] = malloc(sizeof(Case));
-			if (gElts->ngMap[i][j] == NULL)
+			gElts->gMap[i][j] = malloc(sizeof(Case));
+			if (gElts->gMap[i][j] == NULL)
 				return 0;
-			gElts->ngMap[i][j]->item = NOTHING;
+			gElts->gMap[i][j]->item = NOTHING;
+			gElts->gMap[i][j]->explored = 0;
 		}
 	}
 
 	// Home position
 	gElts->home.x = 9;
 	gElts->home.y = 5;
-	gElts->ngMap[gElts->home.x][gElts->home.y]->item = HOME;
+	gElts->gMap[gElts->home.x][gElts->home.y]->item = HOME;
 
-	gElts->gMap[0][9] = '#';
-	gElts->gMap[1][9] = '#';
-	gElts->gMap[2][7] = '#';
-	gElts->gMap[2][8] = '#';
-	gElts->gMap[2][9] = '#';
-	gElts->gMap[3][2] = '#';
-	gElts->gMap[3][3] = '#';
-	gElts->gMap[3][4] = '#';
-	gElts->gMap[3][9] = '#';
-	gElts->gMap[4][2] = '#';
-	gElts->gMap[5][2] = '#';
-	gElts->gMap[6][2] = '#';
-	gElts->gMap[7][2] = '#';
-	gElts->gMap[7][8] = '#';
-	gElts->gMap[7][9] = '#';
-	gElts->gMap[7][10] = '#';
-	gElts->gMap[11][5] = '#';
-	gElts->gMap[13][8] = '#';
-	gElts->gMap[13][9] = '#';
-	gElts->gMap[14][8] = '#';
-	gElts->gMap[14][9] = '#';
+	gElts->gMap[0][9]->item = WALL;
+	gElts->gMap[1][9]->item = WALL;
+	gElts->gMap[2][7]->item = WALL;
+	gElts->gMap[2][8]->item = WALL;
+	gElts->gMap[2][9]->item = WALL;
+	gElts->gMap[3][2]->item = WALL;
+	gElts->gMap[3][3]->item = WALL;
+	gElts->gMap[3][4]->item = WALL;
+	gElts->gMap[3][9]->item = WALL;
+	gElts->gMap[4][2]->item = WALL;
+	gElts->gMap[5][2]->item = WALL;
+	gElts->gMap[6][2]->item = WALL;
+	gElts->gMap[7][2]->item = WALL;
+	gElts->gMap[7][8]->item = WALL;
+	gElts->gMap[7][9]->item = WALL;
+	gElts->gMap[7][10]->item = WALL;
+	gElts->gMap[11][5]->item = WALL;
+	gElts->gMap[13][8]->item = WALL;
+	gElts->gMap[13][9]->item = WALL;
+	gElts->gMap[14][8]->item = WALL;
+	gElts->gMap[14][9]->item = WALL;
 
-	gElts->ngMap[0][9]->item = WALL;
-	gElts->ngMap[1][9]->item = WALL;
-	gElts->ngMap[2][7]->item = WALL;
-	gElts->ngMap[2][8]->item = WALL;
-	gElts->ngMap[2][9]->item = WALL;
-	gElts->ngMap[3][2]->item = WALL;
-	gElts->ngMap[3][3]->item = WALL;
-	gElts->ngMap[3][4]->item = WALL;
-	gElts->ngMap[3][9]->item = WALL;
-	gElts->ngMap[4][2]->item = WALL;
-	gElts->ngMap[5][2]->item = WALL;
-	gElts->ngMap[6][2]->item = WALL;
-	gElts->ngMap[7][2]->item = WALL;
-	gElts->ngMap[7][8]->item = WALL;
-	gElts->ngMap[7][9]->item = WALL;
-	gElts->ngMap[7][10]->item = WALL;
-	gElts->ngMap[11][5]->item = WALL;
-	gElts->ngMap[13][8]->item = WALL;
-	gElts->ngMap[13][9]->item = WALL;
-	gElts->ngMap[14][8]->item = WALL;
-	gElts->ngMap[14][9]->item = WALL;
-
-
-/*
-	if (MAP_WIDTH >= 10 && MAP_HEIGHT >= 10)
-		gElts->gMap[9][9] = 'X';
-		*/
 
 	// Initialize the list of Personages
 	gElts->nb_perso = 0;
@@ -120,7 +86,7 @@ void freeGameElements (GameElements* gElts)
 	{
 		for (j = 0; j < MAP_HEIGHT; j++)
 		{
-			free(gElts->ngMap[i][j]);
+			free(gElts->gMap[i][j]);
 		}
 	}
 
@@ -165,9 +131,9 @@ void addMoney (GameElements* gElts)
 	int x = rand() % MAP_WIDTH;
 	int y = rand() % MAP_HEIGHT;
 
-	if (gElts->ngMap[x][y]->item == NOTHING)
+	if (gElts->gMap[x][y]->item == NOTHING)
 	{
-		gElts->ngMap[x][y]->item = MONEY;
+		gElts->gMap[x][y]->item = MONEY;
 		gElts->money_units++;
 		gElts->money_visible++;
 	}	
@@ -179,11 +145,6 @@ void new_turn (GameElements* gElts)
 	// Variables
 	int i;
 	int r;
-
-	// may add money
-	r = rand() % 5;
-	if (r == 0)
-		addMoney(gElts);
 
 	for (i = 0; i < gElts->nb_perso; i++)
 	{
@@ -200,6 +161,11 @@ void new_turn (GameElements* gElts)
 				break;
 		}
 	}
+
+	// may add money
+	r = rand() % 5;
+	if (r == 0)
+		addMoney(gElts);
 }
 
 void lookingForMoney (GameElements* gElts, int indice)
@@ -219,13 +185,12 @@ void lookingForMoney (GameElements* gElts, int indice)
 	int found_money = 0; // Boolean
 	int max_reached = 0; // Boolean
 
-	if ( labelMap (gElts->ngMap, perso, MONEY) )
+	if ( labelMap (gElts->gMap, perso, MONEY) )
 	{
 		gElts->money_visible--;
 		perso->state = GETTING_MONEY;
 		gettingMoney (gElts, indice);	
 	}
-
 }
 
 void gettingMoney (GameElements* gElts, int indice)
@@ -238,7 +203,7 @@ void gettingMoney (GameElements* gElts, int indice)
 		gElts->money_units--;
 		perso->bag = MONEY;
 		perso->state = GOING_HOME;
-		if ( ! labelMap(gElts->ngMap, perso, HOME))
+		if ( ! labelMap(gElts->gMap, perso, HOME))
 		{
 			printw("Failed to find home\n");
 			refresh();
@@ -247,8 +212,6 @@ void gettingMoney (GameElements* gElts, int indice)
 			nodelay(stdscr, 1);
 			perso->state = WAITING;
 		}
-		//perso->target.x = gElts->home.x;
-		//perso->target.y = gElts->home.y;
 	}
 }
 
@@ -291,9 +254,9 @@ int reachTarget (GameElements* gElts, int indice)
 
 	if (perso->target->nb_elms == 0)
 	{
-		gElts->ngMap[perso->pos.x][perso->pos.y]->targeted = 0;
-		if (gElts->ngMap[perso->pos.x][perso->pos.y]->item == MONEY)
-			gElts->ngMap[perso->pos.x][perso->pos.y]->item = NOTHING;
+		gElts->gMap[perso->pos.x][perso->pos.y]->targeted = 0;
+		if (gElts->gMap[perso->pos.x][perso->pos.y]->item == MONEY)
+			gElts->gMap[perso->pos.x][perso->pos.y]->item = NOTHING;
 		return 1;
 	}
 	else

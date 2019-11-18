@@ -30,11 +30,9 @@ typedef struct
 typedef struct
 {
 	int nb_days;
-	// Old map
-	char gMap[MAP_WIDTH][MAP_HEIGHT];
 
 	// New map
-	Case* ngMap[MAP_WIDTH][MAP_HEIGHT];
+	Case* gMap[MAP_WIDTH][MAP_HEIGHT];
 
 	// The position of the differents elements
 	// Position of the money
