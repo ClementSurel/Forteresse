@@ -34,7 +34,6 @@ void initGameElements (GameElements* gElts)
 	gElts->home.y = 5;
 	gElts->gMap[gElts->home.x][gElts->home.y] == '^';
 
-
 	gElts->gMap[0][9] = '#';
 	gElts->gMap[1][9] = '#';
 	gElts->gMap[2][7] = '#';
@@ -56,6 +55,8 @@ void initGameElements (GameElements* gElts)
 	gElts->gMap[13][9] = '#';
 	gElts->gMap[14][8] = '#';
 	gElts->gMap[14][9] = '#';
+
+
 
 /*
 	if (MAP_WIDTH >= 10 && MAP_HEIGHT >= 10)
@@ -229,7 +230,10 @@ void bringBackItem (GameElements* gElts, int indice)
 int reachTarget (GameElements* gElts, int indice)
 {
 	Personage* perso = &(gElts->list_perso[indice]);
-	Position nextCase = LIFO_getElement (perso->target);
+
+	// Variables
+	Position actualPos = {perso->pos.x, perso->pos.y};
+	Position nextCase = LIFO_pop (perso->target);
 
 	// Bernard is getting to the closest money (one step by calling)
 	if (nextCase.x < perso->pos.x)
@@ -241,6 +245,21 @@ int reachTarget (GameElements* gElts, int indice)
 		perso->pos.y--; 
 	else if (nextCase.y > perso->pos.y)
 		perso->pos.y++;
+
+	nextCase = LIFO_readElement (perso->target);
+	if (  (nextCase.x == actualPos.x -1 || nextCase.x == actualPos.x +1) && (nextCase.y == actualPos.y +1 || nextCase.y == actualPos.y -1) )
+	{
+		LIFO_pop(perso->target);
+		if (nextCase.x < perso->pos.x)
+			perso->pos.x--; 
+		else if (nextCase.x > perso->pos.x)
+			perso->pos.x++;
+
+		if (nextCase.y < perso->pos.y)
+			perso->pos.y--; 
+		else if (nextCase.y > perso->pos.y)
+			perso->pos.y++;
+	}
 
 	if (perso->target->nb_elms == 0)
 		return 1;

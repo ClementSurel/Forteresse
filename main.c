@@ -44,7 +44,7 @@ int main (int argc, char *argv[])
 			readInput(&gElts);
 			printGame(&gElts);
 			
-			gElts.amount_money -= 5;
+			gElts.amount_money -= 5*gElts.nb_perso;
 			gElts.nb_days++;
 			last_t = cur_t;
 

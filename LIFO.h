@@ -16,7 +16,7 @@ struct Element
 struct LIFO_List
 {
 	int nb_elms;
-	
+
     Element* firstElm;
 };
 
@@ -27,7 +27,9 @@ void LIFO_freeList (LIFO_List* LIFO_list);
 
 void LIFO_addElement (LIFO_List* LIFO_list, Position val);
 
-Position LIFO_getElement (LIFO_List* LIFO_list);
+Position LIFO_readElement (LIFO_List* LIFO_list);
+
+Position LIFO_pop (LIFO_List* LIFO_list);
 
 /* Check whether or not a case is already in the list.
 	Return a boolean */

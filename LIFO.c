@@ -83,7 +83,23 @@ void LIFO_addElement (LIFO_List* LIFO_list, Position val)
     LIFO_list->nb_elms++;
 }
 
-Position LIFO_getElement (LIFO_List* LIFO_list)
+Position LIFO_readElement (LIFO_List* LIFO_list)
+{
+    Position element_value = {0, 0};
+
+    if (LIFO_list == NULL)
+        return element_value;
+
+    if (LIFO_list->firstElm == NULL)
+        return element_value;
+
+    element_value.x = LIFO_list->firstElm->value.x;
+    element_value.y = LIFO_list->firstElm->value.y;
+
+    return element_value;
+}       
+
+Position LIFO_pop (LIFO_List* LIFO_list)
 {
     Position val = {0, 0};
     Element *actualElm = NULL;
