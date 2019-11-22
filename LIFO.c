@@ -106,7 +106,7 @@ Position LIFO_pop (LIFO_List* LIFO_list)
 
     if (LIFO_list == NULL)
     {
-        printw("In function LIFO_getElm : No list\n");
+        printw("In function LIFO_pop : No list\n");
         refresh();
         nodelay(stdscr, 0);
         getch();
@@ -115,14 +115,7 @@ Position LIFO_pop (LIFO_List* LIFO_list)
     }
 
     if (LIFO_list->firstElm == NULL)
-    {
-        printw("In function LIFO_getElement : None element found in the list\n");
-        refresh();
-        nodelay(stdscr, 0);
-        getch();
-        nodelay(stdscr, 1);
         return val;
-    }
 
     actualElm = LIFO_list->firstElm;
 

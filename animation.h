@@ -3,7 +3,16 @@
 
 #include "constants.h"
 
+
+
 void printGame (GameElements*);
+
+Job menu_newPerso ();
+
+void movePersonage (GameElements*);
+
+Position selectACase ();
+
 
 #endif // include ANIMATION_H
 

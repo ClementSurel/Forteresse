@@ -1,26 +1,18 @@
 #ifndef BASIC_TYPES_H
 #define BASIC_TYPES_H
 
-
-
+// Position
 typedef struct
 {
 	int x;
 	int y;	
 } Position;
 
+// Direction
+typedef enum {LEFT, LEFT_UP, LEFT_DOWN, RIGHT, RIGHT_UP, RIGHT_DOWN, UP, DOWN} Direction; 
 
-typedef enum {NOTHING, INEXPLORED, MONEY, WALL, HOME, PERSO} Item;
+// Item
+typedef enum {NOTHING, MONEY, WALL, HOME} Item;
 
-typedef struct Case
-{
-	// explored
-	int explored;
-
-	// Item
-	Item item;
-	int targeted;
-	int distance;
-} Case;
 
 #endif // BASIC_TYPES_H

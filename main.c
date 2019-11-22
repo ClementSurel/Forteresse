@@ -1,6 +1,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <ctype.h>
+#include <locale.h>
 
 #include <ncurses.h>
 
@@ -8,60 +10,110 @@
 #include "game.h"
 #include "animation.h"
 #include "LIFO.h"
+#include "level_editor.h"
 
 int main (int argc, char *argv[])
 {
 	/* Variables */
 	GameElements gElts;
-	char input;
+	int input;
 	clock_t last_t, cur_t;
+	int enterGame = 0;
+	int continueProg = 1;
 
 	// Initialize srand
 	srand(time(NULL));
 
 	// Initialize ncruses
+	setlocale(LC_ALL,"");
 	initscr();
-	nodelay(stdscr, 1);
 	noecho();
-	start_color();
+	keypad(stdscr, 1);
+
 	// Color definition
+	start_color();
 	init_pair(1, COLOR_YELLOW, COLOR_BLACK);
 	init_pair(2, COLOR_GREEN, COLOR_BLACK);
 	init_pair(3, COLOR_MAGENTA, COLOR_BLACK);
 	init_pair(4, COLOR_RED, COLOR_BLACK);
 	init_pair(5, COLOR_BLUE, COLOR_BLACK);
+	init_pair(6, COLOR_WHITE, COLOR_WHITE);
+	init_pair(7, COLOR_CYAN, COLOR_BLACK);
+	init_pair(8, COLOR_BLACK, COLOR_WHITE);
 
-	if ( ! initGameElements (&gElts) )
+	while (continueProg)
 	{
-			nodelay(stdscr, 0);
-	printw("END OF THE GAME\n");
-	printw("Press a key to quit");
-	getch();
-	endwin();
-	}
-
-	last_t = clock()/(CLOCKS_PER_SEC/1000);
-
-	while (gElts.nb_days <= NB_DAYS)
-	{
-		cur_t = clock()/(CLOCKS_PER_SEC/1000);
-		if (cur_t - last_t >= DAY_PERIOD)
+		// MAIN TITLE
+		while ( ! enterGame )
 		{
-			new_turn(&gElts);
-			readInput(&gElts);
-			printGame(&gElts);
-			
-			gElts.amount_money -= 5*gElts.nb_perso;
-			gElts.nb_days++;
-			last_t = cur_t;
+			clear();
+			move(TITLE_Y, TITLE_X);
+			attron(COLOR_PAIR(4));
+			printw("===  THE FORTRESS  ===");
+			attroff(COLOR_PAIR(4));
+			move(TITLE_Y+5, TITLE_X);
+			printw("Press any key to start");
+			refresh();
 
+			input = getch();
+			input = toupper(input);
+			if (input == 'E')
+			{
+				createLevel();
+			}
+			else if (input == 27 || input == 'Q')
+			{
+				endwin();
+				return 0;
+			}
+			else
+			{
+				enterGame = 1;
+			}
 		}
-	}
 
-	nodelay(stdscr, 0);
-	printw("END OF THE GAME\n");
-	printw("Press a key to quit");
-	getch();
+		nodelay(stdscr, 1);
+
+		if ( ! initGameElements (&gElts) )
+		{
+			freeGameElements(&gElts);
+			nodelay(stdscr, 0);
+			printw("END OF THE GAME\n");
+			printw("Press a key to quit");
+			getch();
+			endwin();
+			return 1;
+		}
+
+		last_t = clock()/(CLOCKS_PER_SEC/1000);
+
+		while (gElts.nb_days <= NB_DAYS)
+		{
+			cur_t = clock()/(CLOCKS_PER_SEC/1000);
+			if (cur_t - last_t >= DAY_PERIOD)
+			{
+				new_turn(&gElts);
+				printGame(&gElts);
+				readInput(&gElts);
+				
+				gElts.nb_hours += 12;
+				if (gElts.nb_hours >= 24)
+				{
+					gElts.nb_days++;
+					gElts.nb_hours = 0;
+				}
+
+				last_t = cur_t;
+			}
+		}
+
+		nodelay(stdscr, 0);
+		printw("END OF THE GAME\n");
+		printw("Press any key");
+		getch();
+
+		enterGame = 0;
+	} // end while (continueProg)
 
 /* TEST LIFO
 	printw("Test : Create a list\n");
