@@ -217,7 +217,13 @@ void movePersonage (GameElements* gElts)
 				case 'E':
 					targetCase = LIFO_createList();
 					targetPos = selectACase();
-					if (targetPos.x != -1)
+					if (targetPos.x != -1 && ! gElts->gMap[targetPos.x][targetPos.y]->explored)
+					{
+						LIFO_addElement(targetCase, targetPos);
+						gElts->list_perso[i].target = targetCase;
+						gElts->list_perso[i].state = FOLLOWING_PATH;
+					}
+					else if (targetPos.x != -1 && gElts->gMap[targetPos.x][targetPos.y]->explored)
 					{
 						LIFO_addElement(targetCase, targetPos);
 						gElts->list_perso[i].target = targetCase;
@@ -227,10 +233,14 @@ void movePersonage (GameElements* gElts)
 				case KEY_LEFT:
 					for (j = i-1; j >= 0; j--)
 					{
-						if (gElts->list_perso[j].job == EXPLORER)
+						if (j >= 0 && gElts->list_perso[j].job == EXPLORER)
 						{
 							i = j-1;
 							break;
+						}
+						else if (j == -1)
+						{
+							j = gElts->nb_perso;
 						}
 					}
 					break;
@@ -276,7 +286,7 @@ Position selectACase ()
 		switch (input)
 		{
 			case 'T':
-				selectedCase.x = 1+col/2;
+				selectedCase.x = col/2-1;
 				selectedCase.y = row-10;
 				break;
 			case KEY_RIGHT:
@@ -294,7 +304,7 @@ Position selectACase ()
 				}
 				break;
 			case KEY_UP:
-				if (row-1 >= 0)
+				if (row-1 >= 10)
 				{
 					row--;
 					move (row, col);
